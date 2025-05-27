@@ -1,0 +1,5 @@
+bin/
+out/
+.cache/
+compile_commands.json
+mktest
