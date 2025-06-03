@@ -1,5 +1,6 @@
 #pragma once
 
+#include "core.hpp"
 #include "algebra.hpp"
 #include <string>
 #include <functional>
@@ -69,13 +70,15 @@ public:
 
 	void SetEventHandler(const WindowEventHandler &handler) { event_handler_ = handler; }
 
-	void *GetSurfacePtr() { return surface_ptr_; }
-
 	Ivec2 GetFramebufferSize() const;
 
+	VendorPtr GetGlfwWindowPtr_() { return window_ptr_; }
+
+	VendorPtr GetVkSurfacePtr_() { return surface_ptr_; }
+
 private:
-	void *vkinst_;
-	void *window_ptr_, *surface_ptr_;
+	VendorPtr vkinst_;
+	VendorPtr window_ptr_, surface_ptr_;
 	WindowEventHandler event_handler_;
 };
 

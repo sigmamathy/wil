@@ -1,5 +1,7 @@
 #include <wil/appimpl.hpp>
 #include <wil/log.hpp>
+#include <wil/pipeline.hpp>
+#include <wil/drawsync.hpp>
 
 #include <algorithm>
 #include <cstring>
@@ -104,27 +106,61 @@ static void TerminateAPIs_()
 
 App::App() : active_(true) {}
 
+AppInitCtx App::CreateAppInitCtx_()
+{
+	AppInitCtx ctx;
+	ctx.layers_ = &layers_;
+	return ctx;
+}
+
 void appimpl(App *app, int argc, char **argv)
 {
 	InitAPIs_();
-	AppInitCtx ctx;
+
+	AppInitCtx ctx = app->CreateAppInitCtx_();
 	app->OnInit(ctx);
 
 	app->window_ = new Window(vkinstance_, ctx.window);
+
 	app->window_->SetEventHandler([&](WindowEvent &ev) {
 		if (ctx.close_button_op && ev.type == ev.WINDOW_CLOSE_EVENT)
 			app->active_ = false;
 		app->OnWindowEvent(ev);
 	});
 
-	app->device_ = new Device(vkinstance_, app->window_->GetSurfacePtr(), app->window_->GetFramebufferSize());
+	app->device_ = new Device(vkinstance_, app->window_->GetVkSurfacePtr_(), app->window_->GetFramebufferSize());
 
-	while (app->active_) {
+	for (auto [_, layer] : app->layers_)
+		layer->Init(*app->device_);
+
+	LogInfo("wwww");
+
+	auto* sync = new DrawPresentSynchronizer(*app->device_, 1);
+
+	while (app->active_) 
+	{
+		uint32_t index = sync->AcquireImageIndex();
+		std::vector<CommandBuffer*> cmds;
+		cmds.push_back(&app->layers_.begin()->second->Render(index));
+		sync->SubmitDraw(cmds);
+		sync->PresentToScreen(index);
+
 		glfwPollEvents();
 	}
 
+	app->device_->WaitIdle();
+
+	delete sync;
+
+	for (auto [_, layer] : app->layers_)
+		layer->Free();
+
 	delete app->device_;
 	delete app->window_;
+
+	for (auto [_, layer] : app->layers_)
+		delete layer;
+
 	TerminateAPIs_();
 }
 

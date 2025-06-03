@@ -1,5 +1,6 @@
 #include <wil/device.hpp>
 #include <wil/log.hpp>
+#include <wil/pipeline.hpp>
 
 #include <array>
 #include <vector>
@@ -11,13 +12,15 @@
 
 namespace wil {
 
-Device::Device(void *vkinst, void *vksurface, Ivec2 fbsize)
+Device::Device(VendorPtr vkinst, VendorPtr vksurface, Ivec2 fbsize)
 {
-	InitDevice(vkinst, vksurface);
-	InitSwapchain(vksurface, fbsize);
+	InitDevice_(vkinst, vksurface);
+	InitSwapchain_(vksurface, fbsize);
+	InitCommandPool_();
+	InitRenderPassAndFramebuffers_();
 }
 
-void Device::InitDevice(void *vkinst, void *vksurface)
+void Device::InitDevice_(VendorPtr vkinst, VendorPtr vksurface)
 {
 	VkInstance instance = static_cast<VkInstance>(vkinst);
 
@@ -152,7 +155,7 @@ static VkExtent2D ChooseSwapExtent_(Ivec2 fbsize, VkSurfaceCapabilitiesKHR const
     return actual;
 }
 
-void Device::InitSwapchain(void *vksurface, Ivec2 fbsize)
+void Device::InitSwapchain_(VendorPtr vksurface, Ivec2 fbsize)
 {
     VkSurfaceKHR surface = static_cast<VkSurfaceKHR>(vksurface);
 	VkPhysicalDevice phys = static_cast<VkPhysicalDevice>(physical_ptr_);
@@ -202,11 +205,12 @@ void Device::InitSwapchain(void *vksurface, Ivec2 fbsize)
 
 	auto device = static_cast<VkDevice>(device_ptr_);
 
-    if (vkCreateSwapchainKHR(device, &swapchain_ci, nullptr,
-				reinterpret_cast<VkSwapchainKHR*>(&swapchain_ptr_)) != VK_SUCCESS)
+	VkSwapchainKHR sc;
+    if (vkCreateSwapchainKHR(device, &swapchain_ci, nullptr, &sc) != VK_SUCCESS)
 	{
 		LogFatal("Unable to create swapchain");
 	}
+	swapchain_ptr_ = sc;
 
 	swapchain_extent_ = { extent.width, extent.height };
 	swapchain_format_ = format;
@@ -235,8 +239,78 @@ void Device::InitSwapchain(void *vksurface, Ivec2 fbsize)
 
 		VkImageView iv;
         if (vkCreateImageView(device, &view_ci, nullptr, &iv) != VK_SUCCESS)
-			LogFatal("Unable to create image views");
+			LogFatal("Unable to create image view " + std::to_string(i));
 		image_views_ptr_[i] = iv;
+    }
+}
+
+void Device::InitCommandPool_()
+{
+	VkCommandPoolCreateInfo pool_ci{};
+    pool_ci.sType = VK_STRUCTURE_TYPE_COMMAND_POOL_CREATE_INFO;
+    pool_ci.flags = VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT;
+    pool_ci.queueFamilyIndex = graphics_queue_.family_index;
+
+	VkCommandPool pool;
+    if (vkCreateCommandPool(static_cast<VkDevice>(device_ptr_), &pool_ci, nullptr, &pool) != VK_SUCCESS)
+		LogFatal("Unable to create command pool");
+	pool_ptr_ = pool;
+}
+
+void Device::InitRenderPassAndFramebuffers_()
+{
+    VkAttachmentDescription description{};
+    description.format = static_cast<VkFormat>(swapchain_format_);
+    description.samples = VK_SAMPLE_COUNT_1_BIT;
+    description.loadOp = VK_ATTACHMENT_LOAD_OP_CLEAR;
+    description.storeOp = VK_ATTACHMENT_STORE_OP_STORE;
+    description.stencilLoadOp = VK_ATTACHMENT_LOAD_OP_DONT_CARE;
+    description.stencilStoreOp = VK_ATTACHMENT_STORE_OP_DONT_CARE;
+    description.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
+    description.finalLayout = VK_IMAGE_LAYOUT_PRESENT_SRC_KHR;
+
+    VkAttachmentReference reference{};
+    reference.attachment = 0;
+    reference.layout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
+
+    VkSubpassDescription subpass{};
+    subpass.pipelineBindPoint = VK_PIPELINE_BIND_POINT_GRAPHICS;
+    subpass.colorAttachmentCount = 1;
+    subpass.pColorAttachments = &reference;
+
+    VkRenderPassCreateInfo render_pass_ci{};
+    render_pass_ci.sType = VK_STRUCTURE_TYPE_RENDER_PASS_CREATE_INFO;
+    render_pass_ci.attachmentCount = 1;
+    render_pass_ci.pAttachments = &description;
+    render_pass_ci.subpassCount = 1;
+    render_pass_ci.pSubpasses = &subpass;
+
+	auto device = static_cast<VkDevice>(device_ptr_);
+
+	VkRenderPass rp;
+    if (vkCreateRenderPass(device, &render_pass_ci, nullptr, &rp) != VK_SUCCESS)
+		LogFatal("Unable to create render pass");
+	render_pass_ptr_ = rp;
+
+    framebuffers_ptr_.resize(image_views_ptr_.size());
+
+    for (int i = 0; i < framebuffers_ptr_.size(); i++)
+    {
+		VkImageView iv = static_cast<VkImageView>(image_views_ptr_[i]);
+
+        VkFramebufferCreateInfo framebuffer_ci{};
+        framebuffer_ci.sType = VK_STRUCTURE_TYPE_FRAMEBUFFER_CREATE_INFO;
+        framebuffer_ci.renderPass = rp;
+        framebuffer_ci.attachmentCount = 1;
+        framebuffer_ci.pAttachments = &iv;
+        framebuffer_ci.width = swapchain_extent_.x;
+        framebuffer_ci.height = swapchain_extent_.y;
+        framebuffer_ci.layers = 1;
+
+		VkFramebuffer fb;
+        if (vkCreateFramebuffer(device, &framebuffer_ci, nullptr, &fb) != VK_SUCCESS)
+			LogFatal("Unable to create framebuffer " + std::to_string(i));
+		framebuffers_ptr_[i] = fb;
     }
 }
 
@@ -244,10 +318,78 @@ Device::~Device()
 {
 	auto device = static_cast<VkDevice>(device_ptr_);
 
+	for (auto fb : framebuffers_ptr_)
+		vkDestroyFramebuffer(device, static_cast<VkFramebuffer>(fb), nullptr);
+    vkDestroyRenderPass(device, static_cast<VkRenderPass>(render_pass_ptr_), nullptr);
+	vkDestroyCommandPool(device, static_cast<VkCommandPool>(pool_ptr_), nullptr);
     for (auto view : image_views_ptr_)
         vkDestroyImageView(device, static_cast<VkImageView>(view), nullptr);
     vkDestroySwapchainKHR(device, static_cast<VkSwapchainKHR>(swapchain_ptr_), nullptr);
     vkDestroyDevice(device, nullptr);
+}
+
+void Device::WaitIdle()
+{
+	vkDeviceWaitIdle(static_cast<VkDevice>(device_ptr_));
+}
+
+CommandBuffer::CommandBuffer(Device &device) : device_(device)
+{
+    VkCommandBufferAllocateInfo info{};
+    info.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO;
+    info.commandPool = static_cast<VkCommandPool>(device.GetVkCommandPoolPtr_());
+    info.level = VK_COMMAND_BUFFER_LEVEL_PRIMARY;
+    info.commandBufferCount = 1;
+
+	VkCommandBuffer cb;
+    if (vkAllocateCommandBuffers(static_cast<VkDevice>(device.GetVkDevicePtr_()), &info, &cb) != VK_SUCCESS)
+		LogErr("Unable to create command buffer");
+	buffer_ptr_ = cb;
+}
+
+void CommandBuffer::Reset()
+{
+    vkResetCommandBuffer(static_cast<VkCommandBuffer>(buffer_ptr_), 0);
+}
+
+void CommandBuffer::RecordDraw(uint32_t fb_index, const std::function<void(CmdDraw&)> &fn)
+{
+	auto buffer = static_cast<VkCommandBuffer>(buffer_ptr_);
+
+    VkCommandBufferBeginInfo begin_i{};
+    begin_i.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO;
+    begin_i.flags = 0; // Optional
+    begin_i.pInheritanceInfo = nullptr; // Optional
+
+    if (vkBeginCommandBuffer(buffer, &begin_i) != VK_SUCCESS)
+		LogErr("Unable to start recording command buffer");
+
+    VkRenderPassBeginInfo render_pass_i{};
+    render_pass_i.sType = VK_STRUCTURE_TYPE_RENDER_PASS_BEGIN_INFO;
+    render_pass_i.renderPass = static_cast<VkRenderPass>(device_.GetVkRenderPassPtr_());
+    render_pass_i.framebuffer = static_cast<VkFramebuffer>(device_.GetVkFramebufferPtr_(fb_index));
+    render_pass_i.renderArea.offset = { 0, 0 };
+	auto ext = device_.GetSwapchainExtent();
+    render_pass_i.renderArea.extent = VkExtent2D{ext.x, ext.y};
+
+    VkClearValue clear_color = { {{0.0f, 0.0f, 0.0f, 1.0f}} };
+    render_pass_i.clearValueCount = 1;
+    render_pass_i.pClearValues = &clear_color;
+
+    vkCmdBeginRenderPass(buffer, &render_pass_i, VK_SUBPASS_CONTENTS_INLINE);
+
+	CmdDraw cmd(*this);
+	fn(cmd);
+
+    vkCmdEndRenderPass(buffer);
+    if (vkEndCommandBuffer(buffer) != VK_SUCCESS)
+		LogErr("Unable to end recording command buffer");
+}
+
+void CmdDraw::BindPipeline(Pipeline &pipeline)
+{
+    vkCmdBindPipeline(static_cast<VkCommandBuffer>(buffer_.buffer_ptr_), VK_PIPELINE_BIND_POINT_GRAPHICS,
+			static_cast<VkPipeline>(pipeline.GetVkPipelinePtr_()));
 }
 
 }
