@@ -66,7 +66,7 @@ public:
 
 	~Window();
 
-	Window(const Window&) = delete;
+	WIL_DELETE_COPY_AND_REASSIGNMENT(Window);
 
 	void SetEventHandler(const WindowEventHandler &handler) { event_handler_ = handler; }
 

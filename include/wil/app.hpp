@@ -12,6 +12,7 @@ struct AppInitCtx
 {
 	WindowCtor window = {};
 	bool close_button_op = true;
+	uint32_t frames_in_flight = 2;
 
 	template<class T>
 	void NewLayer() requires std::is_base_of_v<Layer, T> {
@@ -30,6 +31,10 @@ public:
 
 	App();
 
+	WIL_DELETE_COPY_AND_REASSIGNMENT(App);
+
+	static App *Instance();
+
 	virtual void OnInit(AppInitCtx &ctx) {}
 
 	virtual void OnWindowEvent(WindowEvent &ev) {}
@@ -38,6 +43,8 @@ public:
 
 	Device &GetDevice() { return *device_; }
 
+	uint32_t GetFramesInFlight() const { return frames_in_flight_; }
+
 private:
 
 	AppInitCtx CreateAppInitCtx_();
@@ -45,6 +52,7 @@ private:
 	Window *window_;
 	Device *device_;
 	bool active_;
+	uint32_t frames_in_flight_;
 
 	std::unordered_map<std::string, Layer*> layers_;
 

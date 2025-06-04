@@ -39,6 +39,7 @@ class Pipeline
 public:
 	Pipeline(const PipelineCtor &ctor);
 	~Pipeline();
+	WIL_DELETE_COPY_AND_REASSIGNMENT(Pipeline);
 
 	VendorPtr GetVkPipelinePtr_() { return pipeline_ptr_; }
 

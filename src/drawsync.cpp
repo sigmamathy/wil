@@ -81,32 +81,30 @@ void DrawPresentSynchronizer::SubmitDraw(const std::vector<CommandBuffer*> &buff
     submit.signalSemaphoreCount = 1;
     submit.pSignalSemaphores = &signal;
 
-	// LogInfo(std::to_string(buffers.size()));
-
     if (vkQueueSubmit(static_cast<VkQueue>(device_.GetGraphicsQueue().vkqueue), 1, &submit,
-				in_flight) != VK_SUCCESS)
+				buffers.size() == 1 ? in_flight : VK_NULL_HANDLE) != VK_SUCCESS)
 		LogErr("Unable to submit draw command");
 
-	// for (size_t i = 1; i < buffers.size(); ++i)
-	// {
-	// 	wait = static_cast<VkSemaphore>(render_semaphores_[i-1]);
-	// 	buf = static_cast<VkCommandBuffer>(buffers[i]->GetVkCommandBufferPtr_());
-	// 	signal = static_cast<VkSemaphore>(render_semaphores_[i]);
-	//
-	// 	VkSubmitInfo submit{};
-	// 	submit.sType = VK_STRUCTURE_TYPE_SUBMIT_INFO;
-	// 	submit.waitSemaphoreCount = 1;
-	// 	submit.pWaitSemaphores = &wait;
-	// 	submit.pWaitDstStageMask = wait_stages;
-	// 	submit.commandBufferCount = 1;
-	// 	submit.pCommandBuffers = &buf;
-	// 	submit.signalSemaphoreCount = 1;
-	// 	submit.pSignalSemaphores = &signal;
-	//
-	// 	if (vkQueueSubmit(static_cast<VkQueue>(device_.GetGraphicsQueue().vkqueue), 1, &submit,
-	// 				i == buffers.size() - 1 ? in_flight : VK_NULL_HANDLE) != VK_SUCCESS)
-	// 		LogErr("Unable to submit draw command");
-	// }
+	for (size_t i = 1; i < buffers.size(); ++i)
+	{
+		wait = static_cast<VkSemaphore>(render_semaphores_[i-1]);
+		buf = static_cast<VkCommandBuffer>(buffers[i]->GetVkCommandBufferPtr_());
+		signal = static_cast<VkSemaphore>(render_semaphores_[i]);
+
+		VkSubmitInfo submit{};
+		submit.sType = VK_STRUCTURE_TYPE_SUBMIT_INFO;
+		submit.waitSemaphoreCount = 1;
+		submit.pWaitSemaphores = &wait;
+		submit.pWaitDstStageMask = wait_stages;
+		submit.commandBufferCount = 1;
+		submit.pCommandBuffers = &buf;
+		submit.signalSemaphoreCount = 1;
+		submit.pSignalSemaphores = &signal;
+
+		if (vkQueueSubmit(static_cast<VkQueue>(device_.GetGraphicsQueue().vkqueue), 1, &submit,
+					i == buffers.size() - 1 ? in_flight : VK_NULL_HANDLE) != VK_SUCCESS)
+			LogErr("Unable to submit draw command");
+	}
 }
 
 void DrawPresentSynchronizer::PresentToScreen(uint32_t image_index)
@@ -115,8 +113,9 @@ void DrawPresentSynchronizer::PresentToScreen(uint32_t image_index)
     VkPresentInfoKHR presentInfo{};
     presentInfo.sType = VK_STRUCTURE_TYPE_PRESENT_INFO_KHR;
 
-    presentInfo.waitSemaphoreCount = render_semaphores_.size();
-    presentInfo.pWaitSemaphores = reinterpret_cast<VkSemaphore*>(&render_semaphores_[0]);
+	auto wait = static_cast<VkSemaphore>(render_semaphores_.back());
+    presentInfo.waitSemaphoreCount = 1;
+    presentInfo.pWaitSemaphores = &wait;
     presentInfo.swapchainCount = 1;
     presentInfo.pSwapchains = swapchains;
     presentInfo.pImageIndices = &image_index;

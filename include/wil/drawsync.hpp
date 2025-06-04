@@ -4,6 +4,8 @@
 #include "device.hpp"
 #include <vector>
 
+struct VkFence_T;
+
 namespace wil {
 
 class DrawPresentSynchronizer
@@ -13,6 +15,8 @@ public:
 	DrawPresentSynchronizer(Device &device, uint32_t num_of_render);
 
 	~DrawPresentSynchronizer();
+
+	WIL_DELETE_COPY_AND_REASSIGNMENT(DrawPresentSynchronizer);
 
 	uint32_t AcquireImageIndex();
 

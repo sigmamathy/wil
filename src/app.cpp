@@ -10,6 +10,7 @@
 
 namespace wil {
 
+static App *appinst_;
 static VkInstance vkinstance_;
 static VkDebugUtilsMessengerEXT vkdebug_;
 
@@ -106,6 +107,10 @@ static void TerminateAPIs_()
 
 App::App() : active_(true) {}
 
+App *App::Instance() {
+	return appinst_;
+}
+
 AppInitCtx App::CreateAppInitCtx_()
 {
 	AppInitCtx ctx;
@@ -115,10 +120,12 @@ AppInitCtx App::CreateAppInitCtx_()
 
 void appimpl(App *app, int argc, char **argv)
 {
+	appinst_ = app;
 	InitAPIs_();
 
 	AppInitCtx ctx = app->CreateAppInitCtx_();
 	app->OnInit(ctx);
+	app->frames_in_flight_ = ctx.frames_in_flight;
 
 	app->window_ = new Window(vkinstance_, ctx.window);
 
@@ -133,24 +140,31 @@ void appimpl(App *app, int argc, char **argv)
 	for (auto [_, layer] : app->layers_)
 		layer->Init(*app->device_);
 
-	LogInfo("wwww");
+	std::vector<DrawPresentSynchronizer*> syncs;
+	syncs.reserve(app->frames_in_flight_);
+	for (uint32_t i = 0; i < app->frames_in_flight_; ++i)
+		syncs.emplace_back(new DrawPresentSynchronizer(*app->device_, 1));
 
-	auto* sync = new DrawPresentSynchronizer(*app->device_, 1);
+	uint32_t frame = 0;
 
 	while (app->active_) 
 	{
-		uint32_t index = sync->AcquireImageIndex();
+		uint32_t index = syncs[frame]->AcquireImageIndex();
 		std::vector<CommandBuffer*> cmds;
-		cmds.push_back(&app->layers_.begin()->second->Render(index));
-		sync->SubmitDraw(cmds);
-		sync->PresentToScreen(index);
+		cmds.push_back(&app->layers_.begin()->second->Render(frame, index));
+		app->device_->GetGraphicsQueue().WaitIdle();
+		syncs[frame]->SubmitDraw(cmds);
+		syncs[frame]->PresentToScreen(index);
 
 		glfwPollEvents();
+
+		frame = (frame + 1) % app->frames_in_flight_;
 	}
 
 	app->device_->WaitIdle();
 
-	delete sync;
+	for (auto sync: syncs)
+		delete sync;
 
 	for (auto [_, layer] : app->layers_)
 		layer->Free();

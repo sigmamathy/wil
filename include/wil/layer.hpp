@@ -14,16 +14,20 @@ public:
 	Layer() = default;
 
 	virtual ~Layer() = default;
+
+	WIL_DELETE_COPY_AND_REASSIGNMENT(Layer);
 	
 	void Init(Device &device);
 
 	void Free();
 
+	CommandBuffer &Render(uint32_t frame, uint32_t index);
+
 	virtual void OnInit(Device &device) {}
 
 	virtual void OnClose() {}
 
-	virtual CommandBuffer &Render(uint32_t index) = 0;
+	virtual void OnRender(CommandBuffer &cmd, uint32_t index) = 0;
 
 	virtual std::unique_ptr<Pipeline> MakePipeline(Device &device) = 0;
 
@@ -33,6 +37,7 @@ public:
 
 private:
 	std::unique_ptr<Pipeline> pipeline_;
+	std::vector<CommandBuffer> cmd_buffers_;
 };
 
 struct Vertex3D
@@ -48,12 +53,9 @@ public:
 
 	void OnClose() override;
 
-	CommandBuffer &Render(uint32_t index) override;
+	void OnRender(CommandBuffer &cmd, uint32_t index) override;
 
 	std::unique_ptr<Pipeline> MakePipeline(Device &device) override;
-
-private:
-	CommandBuffer *cmd_buffer_;
 };
 
 }

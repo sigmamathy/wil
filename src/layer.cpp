@@ -1,10 +1,13 @@
 #include <wil/layer.hpp>
+#include <wil/app.hpp>
 
 namespace wil {
 
 void Layer::Init(Device &device)
 {
 	pipeline_ = MakePipeline(device);
+	for (uint32_t i = 0; i < App::Instance()->GetFramesInFlight(); ++i)
+		cmd_buffers_.emplace_back(device);
 	OnInit(device);
 }
 
@@ -14,25 +17,28 @@ void Layer::Free()
 	pipeline_.reset();
 }
 
+CommandBuffer &Layer::Render(uint32_t frame, uint32_t index)
+{
+	CommandBuffer &buf = cmd_buffers_[frame];
+	OnRender(buf, index);
+	return buf;
+}
+
 void Layer3D::OnInit(Device &device)
 {
-	cmd_buffer_ = new CommandBuffer(device);
 }
 
 void Layer3D::OnClose()
 {
-	delete cmd_buffer_;
 }
 
-CommandBuffer &Layer3D::Render(uint32_t index)
+void Layer3D::OnRender(CommandBuffer &cb, uint32_t index)
 {
-	cmd_buffer_->Reset();
+	cb.Reset();
 
-	cmd_buffer_->RecordDraw(0, [this](CmdDraw &cmd){
+	cb.RecordDraw(index, [this](CmdDraw &cmd){
 		cmd.BindPipeline(GetPipeline());
 	});
-
-	return *cmd_buffer_;
 }
 
 std::unique_ptr<Pipeline> Layer3D::MakePipeline(Device &device)

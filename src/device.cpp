@@ -12,6 +12,11 @@
 
 namespace wil {
 
+void DeviceQueue::WaitIdle()
+{
+	vkQueueWaitIdle(static_cast<VkQueue>(vkqueue));
+}
+
 Device::Device(VendorPtr vkinst, VendorPtr vksurface, Ivec2 fbsize)
 {
 	InitDevice_(vkinst, vksurface);

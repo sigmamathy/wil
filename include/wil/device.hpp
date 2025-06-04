@@ -12,6 +12,7 @@ struct DeviceQueue
 {
 	VendorPtr vkqueue;
 	uint32_t family_index;
+	void WaitIdle();
 };
 
 class Device
@@ -21,6 +22,8 @@ public:
 	Device(VendorPtr vkinst, VendorPtr vksurface, Ivec2 fbsize);
 
 	~Device();
+
+	WIL_DELETE_COPY_AND_REASSIGNMENT(Device);
 
 	void WaitIdle();
 
