@@ -87,9 +87,13 @@ struct CmdDraw
 {
 	CmdDraw(CommandBuffer &buf) : buffer_(buf) {}
 
+	void SetViewport(Fvec2 pos, Fvec2 size, float min_depth = 0.f, float max_depth = 1.f);
+	void SetScissor(Ivec2 offset, Uvec2 extent);
+
 	void BindPipeline(class Pipeline &pipeline);
-	void BindVertexBuffer();
-	void Draw();
+	void BindVertexBuffer(class VertexBuffer &buffer);
+
+	void Draw(uint32_t count, uint32_t instance);
 
 private:
 	CommandBuffer &buffer_;

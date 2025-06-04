@@ -1,6 +1,7 @@
 #include <wil/device.hpp>
 #include <wil/log.hpp>
 #include <wil/pipeline.hpp>
+#include <wil/buffer.hpp>
 
 #include <array>
 #include <vector>
@@ -391,10 +392,43 @@ void CommandBuffer::RecordDraw(uint32_t fb_index, const std::function<void(CmdDr
 		LogErr("Unable to end recording command buffer");
 }
 
+void CmdDraw::SetViewport(Fvec2 pos, Fvec2 size, float min_depth, float max_depth)
+{
+    VkViewport viewport = {
+		pos.x, pos.y,
+		size.x, size.y,
+		min_depth, max_depth
+    };
+
+    vkCmdSetViewport(static_cast<VkCommandBuffer>(buffer_.buffer_ptr_), 0, 1, &viewport);
+}
+
+void CmdDraw::SetScissor(Ivec2 offset, Uvec2 extent)
+{
+    VkRect2D scissor = {
+        {offset.x, offset.y},
+        VkExtent2D{extent.x, extent.y}
+    };
+
+    vkCmdSetScissor(static_cast<VkCommandBuffer>(buffer_.buffer_ptr_), 0, 1, &scissor);
+}
+
 void CmdDraw::BindPipeline(Pipeline &pipeline)
 {
     vkCmdBindPipeline(static_cast<VkCommandBuffer>(buffer_.buffer_ptr_), VK_PIPELINE_BIND_POINT_GRAPHICS,
 			static_cast<VkPipeline>(pipeline.GetVkPipelinePtr_()));
+}
+
+void CmdDraw::BindVertexBuffer(VertexBuffer &buffer)
+{
+    VkBuffer b = static_cast<VkBuffer>(buffer.GetVkBufferPtr_());
+    VkDeviceSize off = 0;
+    vkCmdBindVertexBuffers(static_cast<VkCommandBuffer>(buffer_.buffer_ptr_), 0, 1, &b, &off);
+}
+
+void CmdDraw::Draw(uint32_t count, uint32_t instance)
+{
+    vkCmdDraw(static_cast<VkCommandBuffer>(buffer_.buffer_ptr_), count, instance, 0, 0);
 }
 
 }
