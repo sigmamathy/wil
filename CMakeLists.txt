@@ -8,6 +8,7 @@ find_package(glfw3 REQUIRED)
 find_package(Vulkan REQUIRED)
 
 add_library(${PROJECT_NAME}
+	"deps/stb/src/stb_image.c"
 	"src/app.cpp"
 	"src/log.cpp"
 	"src/display.cpp"
@@ -20,7 +21,7 @@ add_library(${PROJECT_NAME}
 	"src/transform.cpp"
 )
 
-target_include_directories(${PROJECT_NAME} PUBLIC "include")
+target_include_directories(${PROJECT_NAME} PUBLIC "include" "deps/stb/include")
 target_link_libraries(${PROJECT_NAME} glfw ${Vulkan_LIBRARIES})
 
 # List of all shaders
