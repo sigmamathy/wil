@@ -54,4 +54,32 @@ private:
     size_t size_;
 };
 
+class UniformBuffer
+{
+public:
+
+    UniformBuffer(Device &device, size_t size);
+
+    ~UniformBuffer();
+
+	WIL_DELETE_COPY_AND_REASSIGNMENT(UniformBuffer);
+
+	UniformBuffer(UniformBuffer&&) = default;
+
+    void Update(const void* src);
+
+	VendorPtr GetVkBufferPtr_() const { return buffer_ptr_; }
+
+    size_t GetSize() const { return size_; }
+
+private:
+
+	Device &device_;
+
+    VendorPtr buffer_ptr_;
+    VendorPtr memory_ptr_;
+    size_t size_;
+	void *data_;
+};
+
 }

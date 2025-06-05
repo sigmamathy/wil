@@ -434,6 +434,16 @@ void CmdDraw::BindIndexBuffer(IndexBuffer &buffer)
     vkCmdBindIndexBuffer(static_cast<VkCommandBuffer>(buffer_.buffer_ptr_), b, 0, VK_INDEX_TYPE_UINT32);
 }
 
+void CmdDraw::BindDescriptorSet(Pipeline &pipeline, DescriptorSet &set)
+{
+	auto s = static_cast<VkDescriptorSet>(set.GetVkDescriptorSetPtr_());
+	vkCmdBindDescriptorSets(static_cast<VkCommandBuffer>(buffer_.buffer_ptr_),
+			VK_PIPELINE_BIND_POINT_GRAPHICS,
+			static_cast<VkPipelineLayout>(pipeline.GetVkPipelineLayoutPtr_()),
+			0, 1,
+			&s, 0, nullptr);
+}
+
 void CmdDraw::Draw(uint32_t count, uint32_t instance)
 {
     vkCmdDraw(static_cast<VkCommandBuffer>(buffer_.buffer_ptr_), count, instance, 0, 0);

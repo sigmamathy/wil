@@ -9,6 +9,7 @@ Fmat4 TranslateModel(Fvec2 position)
 
 Fmat4 TranslateModel(Fvec3 position)
 {
+	// position = {1,1,1};
 	return {
 		Fvec4(1, 0, 0, position.x),
 		Fvec4(0, 1, 0, position.y),
