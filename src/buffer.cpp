@@ -145,5 +145,30 @@ void VertexBuffer::MapData(const void *src)
     CopyViaStagingBuffer_(device_, size_, src, static_cast<VkBuffer>(buffer_ptr_));
 }
 
+IndexBuffer::IndexBuffer(Device &device, size_t size)
+    : device_(device), size_(size)
+{
+    auto [fst, snd] = CreateBufferAndAllocateMemory_(
+			static_cast<VkDevice>(device.GetVkDevicePtr_()),
+			static_cast<VkPhysicalDevice>(device.GetVkPhysicalDevicePtr_()),
+			size,
+            VK_BUFFER_USAGE_TRANSFER_DST_BIT | VK_BUFFER_USAGE_INDEX_BUFFER_BIT,
+			VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT);
+
+    buffer_ptr_ = fst;
+    memory_ptr_ = snd;
+}
+
+IndexBuffer::~IndexBuffer()
+{
+	auto dev = static_cast<VkDevice>(device_.GetVkDevicePtr_());
+    vkDestroyBuffer(dev, static_cast<VkBuffer>(buffer_ptr_), nullptr);
+    vkFreeMemory(dev, static_cast<VkDeviceMemory>(memory_ptr_), nullptr);
+}
+
+void IndexBuffer::MapData(const unsigned *src)
+{
+    CopyViaStagingBuffer_(device_, size_, src, static_cast<VkBuffer>(buffer_ptr_));
+}
 
 }

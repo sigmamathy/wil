@@ -29,4 +29,29 @@ private:
     size_t size_;
 };
 
+class IndexBuffer
+{
+public:
+
+    IndexBuffer(Device &device, size_t size);
+
+    ~IndexBuffer();
+
+	WIL_DELETE_COPY_AND_REASSIGNMENT(IndexBuffer);
+
+    void MapData(const unsigned* src);
+
+	VendorPtr GetVkBufferPtr_() const { return buffer_ptr_; }
+
+    size_t GetSize() const { return size_; }
+
+private:
+
+	Device &device_;
+
+    VendorPtr buffer_ptr_;
+    VendorPtr memory_ptr_;
+    size_t size_;
+};
+
 }

@@ -19,7 +19,7 @@ class Device
 {
 public:
 
-	Device(VendorPtr vkinst, VendorPtr vksurface, Ivec2 fbsize);
+	Device(VendorPtr vkinst, VendorPtr vksurface, Ivec2 fbsize, bool vsync);
 
 	~Device();
 
@@ -48,7 +48,7 @@ public:
 private:
 
 	void InitDevice_(VendorPtr vkinst, VendorPtr vksurface);
-	void InitSwapchain_(VendorPtr vksurface, Ivec2 fbsize);
+	void InitSwapchain_(VendorPtr vksurface, Ivec2 fbsize, bool vsync);
 	void InitCommandPool_();
 	void InitRenderPassAndFramebuffers_();
 
@@ -92,8 +92,10 @@ struct CmdDraw
 
 	void BindPipeline(class Pipeline &pipeline);
 	void BindVertexBuffer(class VertexBuffer &buffer);
+	void BindIndexBuffer(class IndexBuffer &buffer);
 
 	void Draw(uint32_t count, uint32_t instance);
+	void DrawIndexed(uint32_t count, uint32_t instance);
 
 private:
 	CommandBuffer &buffer_;

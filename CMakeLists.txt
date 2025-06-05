@@ -16,6 +16,7 @@ add_library(${PROJECT_NAME}
 	"src/layer.cpp"
 	"src/drawsync.cpp"
 	"src/buffer.cpp"
+	"src/scene.cpp"
 )
 
 target_include_directories(${PROJECT_NAME} PUBLIC "include")

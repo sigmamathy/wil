@@ -115,6 +115,7 @@ AppInitCtx App::CreateAppInitCtx_()
 {
 	AppInitCtx ctx;
 	ctx.layers_ = &layers_;
+	ctx.scenes_ = &scenes_;
 	return ctx;
 }
 
@@ -125,7 +126,9 @@ void appimpl(App *app, int argc, char **argv)
 
 	AppInitCtx ctx = app->CreateAppInitCtx_();
 	app->OnInit(ctx);
+
 	app->frames_in_flight_ = ctx.frames_in_flight;
+	app->current_scene_ = ctx.start_scene;
 
 	app->window_ = new Window(vkinstance_, ctx.window);
 
@@ -135,45 +138,38 @@ void appimpl(App *app, int argc, char **argv)
 		app->OnWindowEvent(ev);
 	});
 
-	app->device_ = new Device(vkinstance_, app->window_->GetVkSurfacePtr_(), app->window_->GetFramebufferSize());
+	app->device_ = new Device(vkinstance_, app->window_->GetVkSurfacePtr_(),
+			app->window_->GetFramebufferSize(), ctx.vsync);
 
 	for (auto [_, layer] : app->layers_)
 		layer->Init(*app->device_);
 
-	std::vector<DrawPresentSynchronizer*> syncs;
-	syncs.reserve(app->frames_in_flight_);
-	for (uint32_t i = 0; i < app->frames_in_flight_; ++i)
-		syncs.emplace_back(new DrawPresentSynchronizer(*app->device_, 1));
+	for (auto [_, scene] : app->scenes_)
+		scene->Init(*app->device_);
 
 	uint32_t frame = 0;
 
 	while (app->active_) 
 	{
-		uint32_t index = syncs[frame]->AcquireImageIndex();
-		std::vector<CommandBuffer*> cmds;
-		cmds.push_back(&app->layers_.begin()->second->Render(frame, index));
-		app->device_->GetGraphicsQueue().WaitIdle();
-		syncs[frame]->SubmitDraw(cmds);
-		syncs[frame]->PresentToScreen(index);
-
+		app->current_scene_->Render(frame);
 		glfwPollEvents();
-
 		frame = (frame + 1) % app->frames_in_flight_;
 	}
 
 	app->device_->WaitIdle();
 
-	for (auto sync: syncs)
-		delete sync;
+	for (auto [_, scene] : app->scenes_) {
+		scene->Free();
+		delete scene;
+	}
 
-	for (auto [_, layer] : app->layers_)
+	for (auto [_, layer] : app->layers_) {
 		layer->Free();
+		delete layer;
+	}
 
 	delete app->device_;
 	delete app->window_;
-
-	for (auto [_, layer] : app->layers_)
-		delete layer;
 
 	TerminateAPIs_();
 }

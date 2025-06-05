@@ -18,10 +18,10 @@ void DeviceQueue::WaitIdle()
 	vkQueueWaitIdle(static_cast<VkQueue>(vkqueue));
 }
 
-Device::Device(VendorPtr vkinst, VendorPtr vksurface, Ivec2 fbsize)
+Device::Device(VendorPtr vkinst, VendorPtr vksurface, Ivec2 fbsize, bool vsync)
 {
 	InitDevice_(vkinst, vksurface);
-	InitSwapchain_(vksurface, fbsize);
+	InitSwapchain_(vksurface, fbsize, vsync);
 	InitCommandPool_();
 	InitRenderPassAndFramebuffers_();
 }
@@ -129,7 +129,7 @@ static VkSurfaceFormatKHR ChooseSurfaceFormat_(VkPhysicalDevice device, VkSurfac
     return formats[0];
 }
 
-static VkPresentModeKHR ChoosePresentMode_(VkPhysicalDevice device, VkSurfaceKHR surface)
+static VkPresentModeKHR ChoosePresentMode_(VkPhysicalDevice device, VkSurfaceKHR surface, bool vsync)
 {
     std::vector<VkPresentModeKHR> modes;
     uint32_t count;
@@ -137,8 +137,10 @@ static VkPresentModeKHR ChoosePresentMode_(VkPhysicalDevice device, VkSurfaceKHR
     modes.resize(count);
     vkGetPhysicalDeviceSurfacePresentModesKHR(device, surface, &count, modes.data());
 
+	auto desired = vsync ? VK_PRESENT_MODE_MAILBOX_KHR : VK_PRESENT_MODE_IMMEDIATE_KHR;
+
     for (auto const& mode : modes) {
-        if (mode == VK_PRESENT_MODE_MAILBOX_KHR)
+        if (mode == desired)
             return mode;
     }
 
@@ -161,7 +163,7 @@ static VkExtent2D ChooseSwapExtent_(Ivec2 fbsize, VkSurfaceCapabilitiesKHR const
     return actual;
 }
 
-void Device::InitSwapchain_(VendorPtr vksurface, Ivec2 fbsize)
+void Device::InitSwapchain_(VendorPtr vksurface, Ivec2 fbsize, bool vsync)
 {
     VkSurfaceKHR surface = static_cast<VkSurfaceKHR>(vksurface);
 	VkPhysicalDevice phys = static_cast<VkPhysicalDevice>(physical_ptr_);
@@ -170,7 +172,7 @@ void Device::InitSwapchain_(VendorPtr vksurface, Ivec2 fbsize)
     vkGetPhysicalDeviceSurfaceCapabilitiesKHR(phys, surface, &caps);
 
     auto [format, color_space]      = ChooseSurfaceFormat_(phys, surface);
-    VkPresentModeKHR present_mode   = ChoosePresentMode_(phys, surface);
+    VkPresentModeKHR present_mode   = ChoosePresentMode_(phys, surface, vsync);
     VkExtent2D extent               = ChooseSwapExtent_(fbsize, caps);
 
     uint32_t image_count = caps.minImageCount + 1;
@@ -426,9 +428,20 @@ void CmdDraw::BindVertexBuffer(VertexBuffer &buffer)
     vkCmdBindVertexBuffers(static_cast<VkCommandBuffer>(buffer_.buffer_ptr_), 0, 1, &b, &off);
 }
 
+void CmdDraw::BindIndexBuffer(IndexBuffer &buffer)
+{
+    VkBuffer b = static_cast<VkBuffer>(buffer.GetVkBufferPtr_());
+    vkCmdBindIndexBuffer(static_cast<VkCommandBuffer>(buffer_.buffer_ptr_), b, 0, VK_INDEX_TYPE_UINT32);
+}
+
 void CmdDraw::Draw(uint32_t count, uint32_t instance)
 {
     vkCmdDraw(static_cast<VkCommandBuffer>(buffer_.buffer_ptr_), count, instance, 0, 0);
+}
+
+void CmdDraw::DrawIndexed(uint32_t count, uint32_t instance)
+{
+    vkCmdDrawIndexed(static_cast<VkCommandBuffer>(buffer_.buffer_ptr_), count, instance, 0, 0, 0);
 }
 
 }
