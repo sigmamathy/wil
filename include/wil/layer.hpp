@@ -11,23 +11,13 @@ class Layer
 {
 public:
 
-	Layer() = default;
+	Layer(Device &dev, const PipelineCtor &ctor);
 
-	virtual ~Layer() = default;
+	virtual ~Layer();
 
 	WIL_DELETE_COPY_AND_REASSIGNMENT(Layer);
 	
-	void Init(Device &device);
-
-	void Free();
-
 	virtual CommandBuffer &Render(uint32_t frame, uint32_t index) = 0;
-
-	virtual void OnInit(Device &device) {}
-
-	virtual void OnClose() {}
-
-	virtual std::unique_ptr<Pipeline> MakePipeline(Device &device) = 0;
 
 	virtual std::string GetName() const = 0;
 
@@ -56,11 +46,11 @@ class Layer3D : public Layer
 {
 public:
 
-	void OnInit(Device &device) override;
+	Layer3D(Device &device);
 
-	void OnClose() override;
+	~Layer3D();
 
-	std::unique_ptr<Pipeline> MakePipeline(Device &device) override;
+	static PipelineCtor MakePipeline(Device &device);
 
 	DescriptorSet &GetDescriptorSet(uint32_t frame, uint32_t set) { return descriptor_sets_[set + frame]; }
 

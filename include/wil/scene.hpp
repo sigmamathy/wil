@@ -11,22 +11,14 @@ class Scene
 {
 public:
 
-	Scene() = default;
+	Scene(Device &device, const std::vector<std::string> &layers);
 
-	virtual ~Scene() = default;
+	virtual ~Scene();
 
 	WIL_DELETE_COPY_AND_REASSIGNMENT(Scene);
 
-	void Init(Device &device);
-
-	void Free();
-
 	bool Render(uint32_t frame);
 	
-	virtual void OnInit(Device &device) {}
-
-	virtual std::vector<std::string> SetupLayers() const = 0;
-
 	virtual std::string GetName() const = 0;
 
 private:

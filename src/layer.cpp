@@ -5,22 +5,19 @@
 
 namespace wil {
 
-void Layer::Init(Device &device)
+Layer::Layer(Device &device, const PipelineCtor &ctor)
 {
-	pipeline_ = MakePipeline(device);
+	pipeline_ = std::make_unique<Pipeline>(ctor);
 	for (uint32_t i = 0; i < App::Instance()->GetFramesInFlight(); ++i)
 		cmd_buffers_.emplace_back(device);
-	OnInit(device);
 }
 
-void Layer::Free()
+Layer::~Layer()
 {
-	OnClose();
-	pipeline_.reset();
 }
 
 
-void Layer3D::OnInit(Device &device)
+Layer3D::Layer3D(Device &device) : Layer(device, MakePipeline(device))
 {
 	auto &p = GetPipeline();
 	size_t num_set = p.GetDescriptorSetsCount();
@@ -32,12 +29,11 @@ void Layer3D::OnInit(Device &device)
 	descriptor_sets_ = GetPipeline().CreateDescriptorSets(ids);
 }
 
-void Layer3D::OnClose()
+Layer3D::~Layer3D()
 {
-	descriptor_sets_.clear();
 }
 
-std::unique_ptr<Pipeline> Layer3D::MakePipeline(Device &device)
+PipelineCtor Layer3D::MakePipeline(Device &device)
 {
 	PipelineCtor ctor;
 	ctor.device = &device;
@@ -48,7 +44,7 @@ std::unique_ptr<Pipeline> Layer3D::MakePipeline(Device &device)
 	auto &layout = ctor.descriptor_set_layouts.emplace_back();
 	layout.bindings.emplace_back(UNIFORM_BUFFER, 0, VERTEX_SHADER, sizeof(MVP3D));
 	
-	return std::make_unique<Pipeline>(ctor);
+	return ctor;
 }
 
 }

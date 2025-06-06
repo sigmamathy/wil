@@ -15,26 +15,24 @@ struct AppInitCtx
 	bool close_button_op = true;
 	uint32_t frames_in_flight = 2;
 	bool vsync = true;
-	Scene *start_scene = nullptr;
+	std::string start_scene;
 
-	template<class T>
-	T *NewLayer() requires std::is_base_of_v<Layer, T> {
-		T *t = new T();
-		(*layers_)[t->GetName()] = t;
-		return t;
+	template<class T, class... Ts>
+	void NewLayer(Ts&&... args) {
+		layers_.emplace_back([...args = std::forward<Ts>(args)](Device &dev)
+				-> Layer* { return new T(dev, args...); });
 	}
 
-	template<class T>
-	T *NewScene() requires std::is_base_of_v<Scene, T> {
-		T *t = new T();
-		(*scenes_)[t->GetName()] = t;
-		return t;
+	template<class T, class... Ts>
+	void NewScene(Ts&&... args) {
+		scenes_.emplace_back([...args = std::forward<Ts>(args)](Device &dev)
+				-> Scene* { return new T(dev, args...); });
 	}
 
 private:
-	std::unordered_map<std::string, Layer*> *layers_;
-	std::unordered_map<std::string, Scene*> *scenes_;
-	friend class App;
+	std::vector<Layer*(*)(Device&)> layers_;
+	std::vector<Scene*(*)(Device&)> scenes_;
+	friend void appimpl(class App *app, int argc, char **argv);
 };
 
 class App

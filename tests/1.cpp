@@ -24,11 +24,11 @@ public:
 	std::unique_ptr<wil::VertexBuffer> vb;
 	std::unique_ptr<wil::IndexBuffer> ib;
 
-	void OnInit(wil::Device &device) override {
-		wil::Layer3D::OnInit(device);
+	MyLayer(wil::Device &device) : wil::Layer3D(device)
+	{
 		vb = std::make_unique<wil::VertexBuffer>(device, vertices.size() * sizeof(wil::Vertex3D));
-		vb->MapData(vertices.data());
 		ib = std::make_unique<wil::IndexBuffer>(device, indices.size() * sizeof(unsigned));
+		vb->MapData(vertices.data());
 		ib->MapData(indices.data());
 	}
 
@@ -65,11 +65,11 @@ class MyScene : public wil::Scene
 {
 public:
 
-	std::vector<std::string> SetupLayers() const override {
-		return {
-			"MyLayer"
-		};
-	}
+	inline static const std::vector<std::string> LAYERS = {
+		"MyLayer"
+	};
+
+	MyScene(wil::Device &dev) : wil::Scene(dev, LAYERS) {}
 
 	std::string GetName() const override { return "MyScene"; }
 };
@@ -82,8 +82,11 @@ public:
 		ctx.window.size = {1600, 900};
 		ctx.window.title = "MyApp";
 		ctx.window.resizable = true;
+
 		ctx.NewLayer<MyLayer>();
-		ctx.start_scene = ctx.NewScene<MyScene>();
+		ctx.NewScene<MyScene>();
+
+		ctx.start_scene = "MyScene";
 	}
 };
 

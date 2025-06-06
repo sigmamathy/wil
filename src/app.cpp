@@ -111,24 +111,15 @@ App *App::Instance() {
 	return appinst_;
 }
 
-AppInitCtx App::CreateAppInitCtx_()
-{
-	AppInitCtx ctx;
-	ctx.layers_ = &layers_;
-	ctx.scenes_ = &scenes_;
-	return ctx;
-}
-
 void appimpl(App *app, int argc, char **argv)
 {
 	appinst_ = app;
 	InitAPIs_();
 
-	AppInitCtx ctx = app->CreateAppInitCtx_();
+	AppInitCtx ctx;
 	app->OnInit(ctx);
 
 	app->frames_in_flight_ = ctx.frames_in_flight;
-	app->current_scene_ = ctx.start_scene;
 
 	app->window_ = new Window(vkinstance_, ctx.window);
 
@@ -145,11 +136,17 @@ void appimpl(App *app, int argc, char **argv)
 	app->device_ = new Device(vkinstance_, app->window_->GetVkSurfacePtr_(),
 			app->window_->GetFramebufferSize(), ctx.vsync);
 
-	for (auto [_, layer] : app->layers_)
-		layer->Init(*app->device_);
+	for (auto fn : ctx.layers_) {
+		Layer *l = fn(*app->device_);
+		app->layers_[l->GetName()] = l;
+	}
 
-	for (auto [_, scene] : app->scenes_)
-		scene->Init(*app->device_);
+	for (auto fn : ctx.scenes_) {
+		Scene *s = fn(*app->device_);
+		app->scenes_[s->GetName()] = s;
+	}
+
+	app->current_scene_ = app->scenes_.at(ctx.start_scene);
 
 	uint32_t frame = 0;
 
@@ -167,12 +164,10 @@ void appimpl(App *app, int argc, char **argv)
 	app->device_->WaitIdle();
 
 	for (auto [_, scene] : app->scenes_) {
-		scene->Free();
 		delete scene;
 	}
 
 	for (auto [_, layer] : app->layers_) {
-		layer->Free();
 		delete layer;
 	}
 
