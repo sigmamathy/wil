@@ -18,12 +18,30 @@ void DeviceQueue::WaitIdle()
 	vkQueueWaitIdle(static_cast<VkQueue>(vkqueue));
 }
 
+void Device::RecreateSwapchain(Window *window, Ivec2 fbsize, bool vsync)
+{
+	auto device = static_cast<VkDevice>(device_ptr_);
+	while (window->GetFramebufferSize() == Ivec2{0, 0})
+		glfwWaitEvents();
+	WaitIdle();
+
+	for (auto fb : framebuffers_ptr_)
+		vkDestroyFramebuffer(device, static_cast<VkFramebuffer>(fb), nullptr);
+    for (auto view : image_views_ptr_)
+        vkDestroyImageView(device, static_cast<VkImageView>(view), nullptr);
+    vkDestroySwapchainKHR(device, static_cast<VkSwapchainKHR>(swapchain_ptr_), nullptr);
+
+	InitSwapchain_(window->GetVkSurfacePtr_(), fbsize, vsync);
+	InitFramebuffers_();
+}
+
 Device::Device(VendorPtr vkinst, VendorPtr vksurface, Ivec2 fbsize, bool vsync)
 {
 	InitDevice_(vkinst, vksurface);
 	InitSwapchain_(vksurface, fbsize, vsync);
 	InitCommandPool_();
-	InitRenderPassAndFramebuffers_();
+	InitRenderPass_();
+	InitFramebuffers_();
 }
 
 void Device::InitDevice_(VendorPtr vkinst, VendorPtr vksurface)
@@ -265,7 +283,7 @@ void Device::InitCommandPool_()
 	pool_ptr_ = pool;
 }
 
-void Device::InitRenderPassAndFramebuffers_()
+void Device::InitRenderPass_()
 {
     VkAttachmentDescription description{};
     description.format = static_cast<VkFormat>(swapchain_format_);
@@ -299,6 +317,12 @@ void Device::InitRenderPassAndFramebuffers_()
     if (vkCreateRenderPass(device, &render_pass_ci, nullptr, &rp) != VK_SUCCESS)
 		LogFatal("Unable to create render pass");
 	render_pass_ptr_ = rp;
+}
+
+void Device::InitFramebuffers_()
+{
+	auto device = static_cast<VkDevice>(device_ptr_);
+	auto rp = static_cast<VkRenderPass>(render_pass_ptr_);
 
     framebuffers_ptr_.resize(image_views_ptr_.size());
 

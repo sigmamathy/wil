@@ -29,6 +29,11 @@ struct ScrollEvent
     Ivec2 offset;
 };
 
+struct FramebufferResizeEvent
+{
+	Ivec2 size;
+};
+
 struct WindowEvent
 {
     union
@@ -37,6 +42,7 @@ struct WindowEvent
         MouseEvent me;
         CursorEvent ce;
         ScrollEvent se;
+		FramebufferResizeEvent fre;
     };
 
     enum EventType
@@ -45,7 +51,8 @@ struct WindowEvent
         MOUSE_EVENT,
         CURSOR_EVENT,
         SCROLL_EVENT,
-		WINDOW_CLOSE_EVENT
+		WINDOW_CLOSE_EVENT,
+		FRAMEBUFFER_RESIZE_EVENT,
     } type;
 };
 

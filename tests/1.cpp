@@ -81,6 +81,7 @@ public:
 	{
 		ctx.window.size = {1600, 900};
 		ctx.window.title = "MyApp";
+		ctx.window.resizable = true;
 		ctx.NewLayer<MyLayer>();
 		ctx.start_scene = ctx.NewScene<MyScene>();
 	}

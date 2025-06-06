@@ -132,9 +132,13 @@ void appimpl(App *app, int argc, char **argv)
 
 	app->window_ = new Window(vkinstance_, ctx.window);
 
+	bool framebuffer_resized = false;
+
 	app->window_->SetEventHandler([&](WindowEvent &ev) {
 		if (ctx.close_button_op && ev.type == ev.WINDOW_CLOSE_EVENT)
 			app->active_ = false;
+		if (ev.type == ev.FRAMEBUFFER_RESIZE_EVENT)
+			framebuffer_resized = true;
 		app->OnWindowEvent(ev);
 	});
 
@@ -151,7 +155,11 @@ void appimpl(App *app, int argc, char **argv)
 
 	while (app->active_) 
 	{
-		app->current_scene_->Render(frame);
+		if (!app->current_scene_->Render(frame) || framebuffer_resized) {
+			framebuffer_resized = false;
+			app->device_->RecreateSwapchain(app->window_,
+					app->window_->GetFramebufferSize(), ctx.vsync);
+		}
 		glfwPollEvents();
 		frame = (frame + 1) % app->frames_in_flight_;
 	}

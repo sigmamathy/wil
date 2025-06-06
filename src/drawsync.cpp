@@ -45,17 +45,17 @@ DrawPresentSynchronizer::~DrawPresentSynchronizer()
     vkDestroyFence(dev, static_cast<VkFence>(in_flight_fence_), nullptr);
 }
 
-uint32_t DrawPresentSynchronizer::AcquireImageIndex()
+bool DrawPresentSynchronizer::AcquireImageIndex(uint32_t *index)
 {
     VkDevice dev = static_cast<VkDevice>(device_.GetVkDevicePtr_());
 	auto fence = static_cast<VkFence>(in_flight_fence_);
     vkWaitForFences(dev, 1, &fence, VK_TRUE, UINT64_MAX);
-    vkResetFences(dev, 1, &fence);
 
-    uint32_t index;
-    vkAcquireNextImageKHR(dev, static_cast<VkSwapchainKHR>(device_.GetVkSwapchainPtr_()), UINT64_MAX,
-			static_cast<VkSemaphore>(image_available_semaphore_), VK_NULL_HANDLE, &index);
-    return index;
+    VkResult r = vkAcquireNextImageKHR(dev, static_cast<VkSwapchainKHR>(device_.GetVkSwapchainPtr_()), UINT64_MAX,
+			static_cast<VkSemaphore>(image_available_semaphore_), VK_NULL_HANDLE, index);
+	if (r == VK_ERROR_OUT_OF_DATE_KHR) return false;
+	else if (r != VK_SUCCESS && r != VK_SUBOPTIMAL_KHR) LogErr("Unable to acquire image index");
+    return true;
 }
 
 void DrawPresentSynchronizer::SubmitDraw(const std::vector<CommandBuffer*> &buffers)
@@ -70,6 +70,8 @@ void DrawPresentSynchronizer::SubmitDraw(const std::vector<CommandBuffer*> &buff
 	auto buf = static_cast<VkCommandBuffer>(buffers[0]->GetVkCommandBufferPtr_());
 	auto signal = static_cast<VkSemaphore>(render_semaphores_[0]);
 	auto in_flight = static_cast<VkFence>(in_flight_fence_);
+
+    vkResetFences(static_cast<VkDevice>(device_.GetVkDevicePtr_()), 1, &in_flight);
 
     VkSubmitInfo submit{};
     submit.sType = VK_STRUCTURE_TYPE_SUBMIT_INFO;
@@ -107,7 +109,7 @@ void DrawPresentSynchronizer::SubmitDraw(const std::vector<CommandBuffer*> &buff
 	}
 }
 
-void DrawPresentSynchronizer::PresentToScreen(uint32_t image_index)
+bool DrawPresentSynchronizer::PresentToScreen(uint32_t image_index)
 {
     VkSwapchainKHR swapchains[] = { static_cast<VkSwapchainKHR>(device_.GetVkSwapchainPtr_()) };
     VkPresentInfoKHR presentInfo{};
@@ -121,8 +123,9 @@ void DrawPresentSynchronizer::PresentToScreen(uint32_t image_index)
     presentInfo.pImageIndices = &image_index;
 
     VkResult r = vkQueuePresentKHR(static_cast<VkQueue>(device_.GetPresentQueue().vkqueue), &presentInfo);
-    if (r != VK_SUCCESS && r != VK_SUBOPTIMAL_KHR)
-		LogErr("Unable to present to screen");
+	if (r == VK_ERROR_OUT_OF_DATE_KHR) return false;
+	else if (r != VK_SUCCESS && r != VK_SUBOPTIMAL_KHR) LogErr("Unable to present to screen");
+	return true;
 }
 
 }

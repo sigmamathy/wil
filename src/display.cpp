@@ -52,6 +52,14 @@ static void CreateWindowCallback_(GLFWwindow* window)
 		ev.type = ev.WINDOW_CLOSE_EVENT;
         func(ev);
 	});
+
+	glfwSetFramebufferSizeCallback(window, [](GLFWwindow *win, int width, int height) {
+        auto& func = GetEventHandler_(win);
+		WindowEvent ev;
+		ev.type = ev.FRAMEBUFFER_RESIZE_EVENT;
+		ev.fre.size = { width, height };
+		func(ev);
+	});
 }
 
 Window::Window(void *vkinst, const WindowCtor &ctor) : vkinst_(vkinst), event_handler_([](auto&){})

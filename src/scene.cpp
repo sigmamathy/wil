@@ -24,16 +24,18 @@ void Scene::Free()
 		delete sync;
 }
 
-void Scene::Render(uint32_t frame)
+bool Scene::Render(uint32_t frame)
 {
-	uint32_t index = syncs_[frame]->AcquireImageIndex();
+	uint32_t index;
+	if (!syncs_[frame]->AcquireImageIndex(&index))
+		return false;
 	std::vector<CommandBuffer*> cbs;
 	cbs.reserve(layers_.size());
 	for (auto layer : layers_)
 		cbs.push_back(&layer->Render(frame, index));
 	App::Instance()->GetDevice().GetGraphicsQueue().WaitIdle();
 	syncs_[frame]->SubmitDraw(cbs);
-	syncs_[frame]->PresentToScreen(index);	
+	return syncs_[frame]->PresentToScreen(index);
 }
 
 }

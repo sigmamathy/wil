@@ -21,7 +21,7 @@ public:
 
 	void Free();
 
-	void Render(uint32_t frame);
+	bool Render(uint32_t frame);
 	
 	virtual void OnInit(Device &device) {}
 

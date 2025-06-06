@@ -18,11 +18,11 @@ public:
 
 	WIL_DELETE_COPY_AND_REASSIGNMENT(DrawPresentSynchronizer);
 
-	uint32_t AcquireImageIndex();
+	bool AcquireImageIndex(uint32_t *index);
 
 	void SubmitDraw(const std::vector<CommandBuffer*> &buffers);
 
-	void PresentToScreen(uint32_t image_index);
+	bool PresentToScreen(uint32_t image_index);
 
 private:
 	Device &device_;
