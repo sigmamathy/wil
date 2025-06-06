@@ -1,6 +1,7 @@
 #include <wil/pipeline.hpp>
 #include <wil/log.hpp>
 #include <wil/app.hpp>
+#include <wil/descriptor.hpp>
 
 #include <fstream>
 #include <array>
@@ -9,44 +10,10 @@
 
 namespace wil {
 
-DescriptorSet::DescriptorSet(Device &device, VendorPtr vkset, const DescriptorSetLayout &layout)
-	: descriptor_set_ptr_(vkset)
+void DescriptorSetLayout::Add(uint32_t binding, DescriptorType type, ShaderType stage)
 {
-	std::vector<VkDescriptorBufferInfo> bis;
-	std::vector<VkDescriptorImageInfo> iis;
-
-	for (auto bind : layout.bindings)
-	{
-		switch (bind.type)
-		{
-			case UNIFORM_BUFFER: {
-				auto &buf = buffers_.emplace_back(device, bind.size);
-				VkDescriptorBufferInfo bi{};
-				bi.buffer = static_cast<VkBuffer>(buf.GetVkBufferPtr_());
-				bi.offset = 0;
-				bi.range = buf.GetSize();
-				bis.push_back(bi);
-				break;
-			}
-			case COMBINED_IMAGE_SAMPLER:
-				VkDescriptorImageInfo imageInfo{};
-				imageInfo.imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
-				// imageInfo.imageView = textureImageView;
-				// imageInfo.sampler = textureSampler;
-				break;
-		}
-	}
-
-    VkWriteDescriptorSet write{};
-    write.sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
-    write.dstSet = static_cast<VkDescriptorSet>(vkset);
-    write.dstBinding = 0;
-    write.dstArrayElement = 0;
-    write.descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
-    write.descriptorCount = bis.size();
-    write.pBufferInfo = bis.data();
-
-    vkUpdateDescriptorSets(static_cast<VkDevice>(device.GetVkDevicePtr_()), 1, &write, 0, nullptr);
+	bindings_.emplace_back(binding, type, stage);
+	++descriptor_count_[type];
 }
 
 static VkShaderModule CreateShaderModule_(VkDevice device, char const* path)
@@ -87,7 +54,7 @@ static VkShaderStageFlags GetVkShaderStageFlag_(ShaderType type) {
 	__builtin_unreachable();
 }
 
-Pipeline::Pipeline(const PipelineCtor &ctor) : device_(*ctor.device)
+Pipeline::Pipeline(const PipelineCtor &ctor) : device_(*ctor.device), descriptor_set_layouts_(ctor.descriptor_set_layouts)
 {
 	VkDevice device = static_cast<VkDevice>(ctor.device->GetVkDevicePtr_());
 
@@ -180,30 +147,24 @@ Pipeline::Pipeline(const PipelineCtor &ctor) : device_(*ctor.device)
 	dynamic_state_ci.dynamicStateCount = dynamic_states.size();
 	dynamic_state_ci.pDynamicStates = dynamic_states.data();
 
-	uint32_t uniform_descriptor_count = 0;
-	uint32_t combined_image_sampler_descriptor_count = 0;
+	std::vector<VkDescriptorSetLayout> dslptr;
+	dslptr.reserve(descriptor_set_layouts_.size());
 
-	descriptor_set_layouts_ptr_.reserve(ctor.descriptor_set_layouts.size());
-
-	for (auto &dsl : ctor.descriptor_set_layouts)
+	for (auto &dsl : descriptor_set_layouts_)
 	{
 		VkDescriptorSetLayoutCreateInfo layout_ci{};
 		layout_ci.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_LAYOUT_CREATE_INFO;
-		layout_ci.bindingCount = dsl.bindings.size();
+		layout_ci.bindingCount = dsl.bindings_.size();
 
 		std::vector<VkDescriptorSetLayoutBinding> bindings;
-		bindings.reserve(dsl.bindings.size());
-		for (auto bind : dsl.bindings) {
+		bindings.reserve(dsl.bindings_.size());
+		for (auto bind : dsl.bindings_) {
 			bindings.emplace_back(
 					bind.binding,
 					GetVkDescriptorType_(bind.type),
 					1,
 					GetVkShaderStageFlag_(bind.stage),
 					nullptr);
-			switch (bind.type) {
-				case UNIFORM_BUFFER: ++uniform_descriptor_count; break;
-				case COMBINED_IMAGE_SAMPLER: ++combined_image_sampler_descriptor_count; break;
-			}
 		}
 
 		layout_ci.pBindings = bindings.data();
@@ -211,16 +172,14 @@ Pipeline::Pipeline(const PipelineCtor &ctor) : device_(*ctor.device)
 		VkDescriptorSetLayout layout;
 		if (vkCreateDescriptorSetLayout(device, &layout_ci, nullptr, &layout) != VK_SUCCESS)
 			LogErr("Unable to create descriptor set layout");
-		descriptor_set_layouts_ptr_.push_back(layout);
-		
+		dsl.descriptor_set_layout_ptr_ = layout;
+		dslptr.push_back(layout);
 	}
 
 	VkPipelineLayoutCreateInfo pipeline_layout_ci{};
 	pipeline_layout_ci.sType = VK_STRUCTURE_TYPE_PIPELINE_LAYOUT_CREATE_INFO;
-	pipeline_layout_ci.setLayoutCount = ctor.descriptor_set_layouts.size();
-	pipeline_layout_ci.pSetLayouts = ctor.descriptor_set_layouts.size()
-		? reinterpret_cast<VkDescriptorSetLayout*>(descriptor_set_layouts_ptr_.data())
-		: nullptr;
+	pipeline_layout_ci.setLayoutCount = dslptr.size();
+	pipeline_layout_ci.pSetLayouts = dslptr.size() ? dslptr.data() : nullptr;
 
 	if (vkCreatePipelineLayout(device, &pipeline_layout_ci, nullptr, reinterpret_cast<VkPipelineLayout*>(&layout_ptr_)) != VK_SUCCESS)
 		LogErr("Unable to create pipeline layout");
@@ -246,62 +205,16 @@ Pipeline::Pipeline(const PipelineCtor &ctor) : device_(*ctor.device)
 
 	vkDestroyShaderModule(device, vert, nullptr);
 	vkDestroyShaderModule(device, frag, nullptr);
-
-	auto fif = App::Instance()->GetFramesInFlight();
-	std::array<VkDescriptorPoolSize, 2> pool_sizes;
-	pool_sizes[0].type = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
-	pool_sizes[0].descriptorCount = uniform_descriptor_count * fif;
-	pool_sizes[1].type = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
-	pool_sizes[1].descriptorCount = combined_image_sampler_descriptor_count * fif;
-	VkDescriptorPoolCreateInfo pool_i{};
-	pool_i.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_POOL_CREATE_INFO;
-	pool_i.poolSizeCount = static_cast<uint32_t>(pool_sizes.size());
-	pool_i.pPoolSizes = pool_sizes.data();
-	pool_i.maxSets = ctor.descriptor_set_layouts.size() * fif;
-
-	VkDescriptorPool pool;
-	if (vkCreateDescriptorPool(device, &pool_i, nullptr, &pool) != VK_SUCCESS)
-		LogErr("Unable to create descriptor pool");
-	descriptor_pool_ptr_ = pool;
-
-	set_layouts_ = ctor.descriptor_set_layouts;
 }
 
 Pipeline::~Pipeline()
 {
 	auto device = static_cast<VkDevice>(device_.GetVkDevicePtr_());
 
-	vkDestroyDescriptorPool(device, static_cast<VkDescriptorPool>(descriptor_pool_ptr_), nullptr);
-	for (auto layout : descriptor_set_layouts_ptr_)
-		vkDestroyDescriptorSetLayout(device, static_cast<VkDescriptorSetLayout>(layout), nullptr);
+	for (auto l : descriptor_set_layouts_)
+		vkDestroyDescriptorSetLayout(device, static_cast<VkDescriptorSetLayout>(l.descriptor_set_layout_ptr_), nullptr);
 	vkDestroyPipelineLayout(device, static_cast<VkPipelineLayout>(layout_ptr_), nullptr);
 	vkDestroyPipeline(device, static_cast<VkPipeline>(pipeline_ptr_), nullptr);
-}
-
-std::vector<DescriptorSet> Pipeline::CreateDescriptorSets(const std::vector<uint32_t> &set_ids)
-{
-	auto device = static_cast<VkDevice>(device_.GetVkDevicePtr_());
-	std::vector<VkDescriptorSetLayout> layouts;
-	layouts.reserve(set_ids.size());
-
-	for (auto id : set_ids)
-		layouts.push_back(static_cast<VkDescriptorSetLayout>(descriptor_set_layouts_ptr_[id]));
-	VkDescriptorSetAllocateInfo desc_set_ai{};
-	desc_set_ai.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_ALLOCATE_INFO;
-	desc_set_ai.descriptorPool = static_cast<VkDescriptorPool>(descriptor_pool_ptr_);
-	desc_set_ai.descriptorSetCount = set_ids.size();
-	desc_set_ai.pSetLayouts = layouts.data();
-
-	std::vector<VkDescriptorSet> sets;
-	sets.resize(set_ids.size());
-	if (vkAllocateDescriptorSets(device,
-				&desc_set_ai, sets.data()) != VK_SUCCESS)
-		LogErr("Unable to allocate descriptor sets");
-
-	std::vector<DescriptorSet> result;
-	for (int i = 0; i < sets.size(); ++i)
-		result.emplace_back(device_, sets[i], set_layouts_[set_ids[i]]);
-	return result;
 }
 
 template<> uint32_t getvkattribformat_<float>() { return VK_FORMAT_R32_SFLOAT; }

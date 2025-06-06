@@ -19,6 +19,7 @@ add_library(${PROJECT_NAME}
 	"src/buffer.cpp"
 	"src/scene.cpp"
 	"src/transform.cpp"
+	"src/descriptor.cpp"
 )
 
 target_include_directories(${PROJECT_NAME} PUBLIC "include" "deps/stb/include")

@@ -11,7 +11,7 @@ class Layer
 {
 public:
 
-	Layer(Device &dev, const PipelineCtor &ctor);
+	Layer(Device &dev);
 
 	virtual ~Layer();
 
@@ -21,18 +21,16 @@ public:
 
 	virtual std::string GetName() const = 0;
 
-	Pipeline &GetPipeline() { return *pipeline_; }
-
 	CommandBuffer &GetCommandBuffer(uint32_t frame) { return cmd_buffers_[frame]; }
 
 private:
-	std::unique_ptr<Pipeline> pipeline_;
 	std::vector<CommandBuffer> cmd_buffers_;
 };
 
 struct Vertex3D
 {
 	Fvec2 pos;
+	Fvec2 texcoord;
 };
 
 struct MVP3D
@@ -50,12 +48,10 @@ public:
 
 	~Layer3D();
 
-	static PipelineCtor MakePipeline(Device &device);
-
-	DescriptorSet &GetDescriptorSet(uint32_t frame, uint32_t set) { return descriptor_sets_[set + frame]; }
+	Pipeline &GetPipeline() { return *pipeline_; }
 
 private:
-	std::vector<DescriptorSet> descriptor_sets_;
+	std::unique_ptr<Pipeline> pipeline_;
 };
 
 }

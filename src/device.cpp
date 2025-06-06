@@ -2,6 +2,7 @@
 #include <wil/log.hpp>
 #include <wil/pipeline.hpp>
 #include <wil/buffer.hpp>
+#include <wil/descriptor.hpp>
 
 #include <array>
 #include <vector>

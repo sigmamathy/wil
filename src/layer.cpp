@@ -5,11 +5,12 @@
 
 namespace wil {
 
-Layer::Layer(Device &device, const PipelineCtor &ctor)
+Layer::Layer(Device &device)
 {
-	pipeline_ = std::make_unique<Pipeline>(ctor);
 	for (uint32_t i = 0; i < App::Instance()->GetFramesInFlight(); ++i)
 		cmd_buffers_.emplace_back(device);
+
+	// wil::LogInfo(std::to_string(cmd_buffers_.size()));
 }
 
 Layer::~Layer()
@@ -17,34 +18,26 @@ Layer::~Layer()
 }
 
 
-Layer3D::Layer3D(Device &device) : Layer(device, MakePipeline(device))
-{
-	auto &p = GetPipeline();
-	size_t num_set = p.GetDescriptorSetsCount();
-	std::vector<uint32_t> ids;
-	ids.resize(num_set * App::Instance()->GetFramesInFlight());
-	for (uint32_t i = 0; i < ids.size(); ++i)
-		ids[i] = i % num_set;
-
-	descriptor_sets_ = GetPipeline().CreateDescriptorSets(ids);
-}
-
-Layer3D::~Layer3D()
-{
-}
-
-PipelineCtor Layer3D::MakePipeline(Device &device)
+Layer3D::Layer3D(Device &device) : Layer(device)
 {
 	PipelineCtor ctor;
 	ctor.device = &device;
 	ctor.shaders[VERTEX_SHADER] = "../shaders/3d.vert.spv";
 	ctor.shaders[FRAGMENT_SHADER] = "../shaders/3d.frag.spv";
 	ctor.vertex_layout.push_back(wilvrta(0, Vertex3D, pos));
+	ctor.vertex_layout.push_back(wilvrta(1, Vertex3D, texcoord));
 	ctor.vertex_stride = sizeof(Vertex3D);
-	auto &layout = ctor.descriptor_set_layouts.emplace_back();
-	layout.bindings.emplace_back(UNIFORM_BUFFER, 0, VERTEX_SHADER, sizeof(MVP3D));
+
+	ctor.descriptor_set_layouts.resize(1);
+	ctor.descriptor_set_layouts[0].Add(0, UNIFORM_BUFFER, VERTEX_SHADER);
+	ctor.descriptor_set_layouts[0].Add(1, COMBINED_IMAGE_SAMPLER, FRAGMENT_SHADER);
+
+	pipeline_ = std::make_unique<Pipeline>(ctor);
 	
-	return ctor;
+}
+
+Layer3D::~Layer3D()
+{
 }
 
 }

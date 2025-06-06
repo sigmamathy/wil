@@ -36,27 +36,16 @@ enum DescriptorType
 struct DescriptorSetLayout
 {
 	struct Binding {
-		DescriptorType type;
 		uint32_t binding;
+		DescriptorType type;
 		ShaderType stage;
-		size_t size;
 	};
 
-	std::vector<Binding> bindings;
-};
+	void Add(uint32_t binding, DescriptorType type, ShaderType stage);
 
-class DescriptorSet
-{
-public:
-	DescriptorSet(Device &device, VendorPtr vkdescriptorset, const DescriptorSetLayout &layout);
-	
-	UniformBuffer &GetUniform(uint32_t binding) { return buffers_[binding]; }
-
-	VendorPtr GetVkDescriptorSetPtr_() { return descriptor_set_ptr_; }
-
-private:
-	VendorPtr descriptor_set_ptr_;
-	std::vector<UniformBuffer> buffers_;
+	std::vector<Binding> bindings_;
+	std::array<uint32_t, 2> descriptor_count_ = {0, 0};
+	VendorPtr descriptor_set_layout_ptr_;
 };
 
 struct PipelineCtor
@@ -71,13 +60,16 @@ struct PipelineCtor
 class Pipeline
 {
 public:
+
 	Pipeline(const PipelineCtor &ctor);
+
 	~Pipeline();
+
 	WIL_DELETE_COPY_AND_REASSIGNMENT(Pipeline);
 
-	std::vector<DescriptorSet> CreateDescriptorSets(const std::vector<uint32_t> &set_ids);
+	const std::vector<DescriptorSetLayout> &GetDescriptorSetLayouts() const { return descriptor_set_layouts_; }
 
-	size_t GetDescriptorSetsCount() const { return descriptor_set_layouts_ptr_.size(); }
+	Device &GetDevice() { return device_; }
 
 	VendorPtr GetVkPipelinePtr_() { return pipeline_ptr_; }
 
@@ -88,9 +80,7 @@ private:
 	Device &device_;
 	VendorPtr pipeline_ptr_, layout_ptr_;
 
-	std::vector<DescriptorSetLayout> set_layouts_;
-	std::vector<VendorPtr> descriptor_set_layouts_ptr_;
-	VendorPtr descriptor_pool_ptr_;
+	std::vector<DescriptorSetLayout> descriptor_set_layouts_;
 };
 
 }

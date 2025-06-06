@@ -64,7 +64,7 @@ public:
 
 	WIL_DELETE_COPY_AND_REASSIGNMENT(UniformBuffer);
 
-	UniformBuffer(UniformBuffer&&) = default;
+	// UniformBuffer(UniformBuffer&&) = default;
 
     void Update(const void* src);
 
@@ -89,6 +89,10 @@ public:
 	Texture(Device &dev, const std::string &path);
 
 	~Texture();
+
+	VendorPtr GetVkImageViewPtr_() const { return image_view_ptr_; }
+
+	VendorPtr GetVkSamplerPtr_() const { return sampler_ptr_; }
 
 private:
 

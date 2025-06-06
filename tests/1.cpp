@@ -4,14 +4,18 @@
 #include "wil/layer.hpp"
 #include "wil/buffer.hpp"
 #include "wil/transform.hpp"
+#include "wil/descriptor.hpp"
+#include "wil/log.hpp"
 
 #include <GLFW/glfw3.h>
 
-static std::array vertices = {
-	wil::Vertex3D{wil::Fvec2(-0.5f, 0.5f)},
-	wil::Vertex3D{wil::Fvec2(0.5f, 0.5f)},
-	wil::Vertex3D{wil::Fvec2(0.5f, -0.5f)},
-	wil::Vertex3D{wil::Fvec2(-0.5f, -0.5f)},
+using wil::Fvec2;
+
+static std::vector<wil::Vertex3D> vertices = {
+	{{-0.5f, 0.5f}, {0, 1}},
+	{{0.5f, 0.5f}, {1, 1}},
+	{{0.5f, -0.5f}, {1, 0}},
+	{{-0.5f, -0.5f}, {0, 0}},
 };
 
 static std::array<unsigned, 6> indices = {
@@ -25,6 +29,11 @@ public:
 
 	std::unique_ptr<wil::VertexBuffer> vb;
 	std::unique_ptr<wil::IndexBuffer> ib;
+
+	std::unique_ptr<wil::DescriptorPool> pool;
+	std::vector<wil::DescriptorSet> sets;
+
+	std::vector<std::unique_ptr<wil::UniformBuffer>> uniforms;
 	std::unique_ptr<wil::Texture> texture;
 
 	MyLayer(wil::Device &device) : wil::Layer3D(device)
@@ -34,7 +43,18 @@ public:
 		vb->MapData(vertices.data());
 		ib->MapData(indices.data());
 
-		texture = std::make_unique<wil::Texture>(device, "/home/makgsum/DevProjects/wil/tests/Linux_mascot_tux.png");
+		uint32_t fif = wil::App::Instance()->GetFramesInFlight();
+
+		pool = std::make_unique<wil::DescriptorPool>(GetPipeline(), std::vector{fif});
+		sets = pool->AllocateSets(0, fif);
+
+		texture = std::make_unique<wil::Texture>(device, "../../tests/texture.jpg");
+
+		for (int i = 0; i < fif; ++i) {
+			uniforms.emplace_back(new wil::UniformBuffer(device, sizeof(wil::MVP3D)));
+			sets[i].BindUniform(0, *uniforms[i]);
+			sets[i].BindTexture(1, *texture);
+		}
 	}
 
 	wil::CommandBuffer &Render(uint32_t frame, uint32_t index) override
@@ -47,11 +67,11 @@ public:
 		mvp.view = wil::Transpose(wil::LookAtView(wil::Fvec3(0.0f, 0.f, -1.f), wil::Fvec3(0.0f, 0.f, 1.f)));
 		mvp.model = wil::Transpose(wil::RotateModel(glfwGetTime(), wil::Fvec3(0.f, 1.f, 0.f)));
 
-		GetDescriptorSet(frame, 0).GetUniform(0).Update(&mvp);
+		uniforms[frame]->Update(&mvp);
 
 		cb.RecordDraw(index, [this, frame](wil::CmdDraw &cmd){
 			cmd.BindPipeline(GetPipeline());
-			cmd.BindDescriptorSet(GetPipeline(), GetDescriptorSet(frame, 0));
+			cmd.BindDescriptorSet(GetPipeline(), sets[frame]);
 			cmd.BindVertexBuffer(*vb);
 			cmd.BindIndexBuffer(*ib);
 			auto size = wil::App::Instance()->GetWindow().GetFramebufferSize();
