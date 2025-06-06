@@ -5,7 +5,6 @@
 #include <utility>
 #include <cstdint>
 #include <vector>
-#include <memory>
 
 namespace wil {
 
@@ -28,8 +27,10 @@ uint32_t getvkattribformat_();
 
 #define wilvrta(l, cn, m) VertexAttribLayout{(l), 0, getvkattribformat_<decltype(std::declval<cn>().m)>(), offsetof(cn, m)}
 
-enum DescriptorType {
+enum DescriptorType
+{
 	UNIFORM_BUFFER,
+	COMBINED_IMAGE_SAMPLER
 };
 
 struct DescriptorSetLayout

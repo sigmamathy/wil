@@ -9,7 +9,6 @@ Fmat4 TranslateModel(Fvec2 position)
 
 Fmat4 TranslateModel(Fvec3 position)
 {
-	// position = {1,1,1};
 	return {
 		Fvec4(1, 0, 0, position.x),
 		Fvec4(0, 1, 0, position.y),
@@ -24,9 +23,9 @@ Fmat4 RotateModel(float rad, Fvec3 axis)
 		return Fmat4(1);
 	axis = Normalize(axis);
 	float c = std::cos(rad), s = std::sin(rad);
-	auto fun1 = [&](int i) -> float { return c + axis[i] * axis[i] * (1 - c); };
-	auto fun2 = [&](int i, int j, int k) -> float { return (1 - c) * axis[i] * axis[j] + s * axis[k]; };
-	auto fun3 = [&](int i, int j, int k) -> float { return (1 - c) * axis[i] * axis[j] - s * axis[k]; };
+	auto fun1 = [=](int i) -> float { return c + axis[i] * axis[i] * (1 - c); };
+	auto fun2 = [=](int i, int j, int k) -> float { return (1 - c) * axis[i] * axis[j] + s * axis[k]; };
+	auto fun3 = [=](int i, int j, int k) -> float { return (1 - c) * axis[i] * axis[j] - s * axis[k]; };
 
 	return {
 		Fvec4(fun1(0), fun3(0, 1, 2), fun2(0, 2, 1), 0),

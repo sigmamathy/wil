@@ -82,4 +82,22 @@ private:
 	void *data_;
 };
 
+class Texture
+{
+public:
+
+	Texture(Device &dev, const std::string &path);
+
+	~Texture();
+
+private:
+
+	Device &device_;
+
+	VendorPtr image_ptr_;
+	VendorPtr memory_ptr_;
+	VendorPtr image_view_ptr_;
+	VendorPtr sampler_ptr_;
+};
+
 }

@@ -5,6 +5,8 @@
 #include "wil/buffer.hpp"
 #include "wil/transform.hpp"
 
+#include <GLFW/glfw3.h>
+
 static std::array vertices = {
 	wil::Vertex3D{wil::Fvec2(-0.5f, 0.5f)},
 	wil::Vertex3D{wil::Fvec2(0.5f, 0.5f)},
@@ -23,6 +25,7 @@ public:
 
 	std::unique_ptr<wil::VertexBuffer> vb;
 	std::unique_ptr<wil::IndexBuffer> ib;
+	std::unique_ptr<wil::Texture> texture;
 
 	MyLayer(wil::Device &device) : wil::Layer3D(device)
 	{
@@ -30,6 +33,8 @@ public:
 		ib = std::make_unique<wil::IndexBuffer>(device, indices.size() * sizeof(unsigned));
 		vb->MapData(vertices.data());
 		ib->MapData(indices.data());
+
+		texture = std::make_unique<wil::Texture>(device, "/home/makgsum/DevProjects/wil/tests/Linux_mascot_tux.png");
 	}
 
 	wil::CommandBuffer &Render(uint32_t frame, uint32_t index) override
@@ -39,8 +44,8 @@ public:
 
 		wil::MVP3D mvp;
 		mvp.proj = wil::Transpose(wil::PerspectiveProjection(2.0944f, 16.f/9, .1f, 100.f));
-		mvp.view = wil::Transpose(wil::LookAtView(wil::Fvec3(0.5f, 0.f, -1.f), wil::Fvec3(-0.2f, 0.f, 1.f)));
-		mvp.model = wil::Transpose(wil::RotateModel(2.f));
+		mvp.view = wil::Transpose(wil::LookAtView(wil::Fvec3(0.0f, 0.f, -1.f), wil::Fvec3(0.0f, 0.f, 1.f)));
+		mvp.model = wil::Transpose(wil::RotateModel(glfwGetTime(), wil::Fvec3(0.f, 1.f, 0.f)));
 
 		GetDescriptorSet(frame, 0).GetUniform(0).Update(&mvp);
 

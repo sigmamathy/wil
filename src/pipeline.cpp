@@ -13,15 +13,28 @@ DescriptorSet::DescriptorSet(Device &device, VendorPtr vkset, const DescriptorSe
 	: descriptor_set_ptr_(vkset)
 {
 	std::vector<VkDescriptorBufferInfo> bis;
+	std::vector<VkDescriptorImageInfo> iis;
 
 	for (auto bind : layout.bindings)
 	{
-		auto &buf = buffers_.emplace_back(device, bind.size);
-		VkDescriptorBufferInfo bi{};
-		bi.buffer = static_cast<VkBuffer>(buf.GetVkBufferPtr_());
-		bi.offset = 0;
-		bi.range = buf.GetSize();
-		bis.push_back(bi);
+		switch (bind.type)
+		{
+			case UNIFORM_BUFFER: {
+				auto &buf = buffers_.emplace_back(device, bind.size);
+				VkDescriptorBufferInfo bi{};
+				bi.buffer = static_cast<VkBuffer>(buf.GetVkBufferPtr_());
+				bi.offset = 0;
+				bi.range = buf.GetSize();
+				bis.push_back(bi);
+				break;
+			}
+			case COMBINED_IMAGE_SAMPLER:
+				VkDescriptorImageInfo imageInfo{};
+				imageInfo.imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
+				// imageInfo.imageView = textureImageView;
+				// imageInfo.sampler = textureSampler;
+				break;
+		}
 	}
 
     VkWriteDescriptorSet write{};
@@ -61,6 +74,7 @@ static VkShaderModule CreateShaderModule_(VkDevice device, char const* path)
 static VkDescriptorType GetVkDescriptorType_(DescriptorType type) {
 	switch (type) {
 		case UNIFORM_BUFFER: return VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
+		case COMBINED_IMAGE_SAMPLER: return VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
 	}
 	__builtin_unreachable();
 }
@@ -167,6 +181,7 @@ Pipeline::Pipeline(const PipelineCtor &ctor) : device_(*ctor.device)
 	dynamic_state_ci.pDynamicStates = dynamic_states.data();
 
 	uint32_t uniform_descriptor_count = 0;
+	uint32_t combined_image_sampler_descriptor_count = 0;
 
 	descriptor_set_layouts_ptr_.reserve(ctor.descriptor_set_layouts.size());
 
@@ -185,7 +200,10 @@ Pipeline::Pipeline(const PipelineCtor &ctor) : device_(*ctor.device)
 					1,
 					GetVkShaderStageFlag_(bind.stage),
 					nullptr);
-			if (bind.type == UNIFORM_BUFFER) ++uniform_descriptor_count;
+			switch (bind.type) {
+				case UNIFORM_BUFFER: ++uniform_descriptor_count; break;
+				case COMBINED_IMAGE_SAMPLER: ++combined_image_sampler_descriptor_count; break;
+			}
 		}
 
 		layout_ci.pBindings = bindings.data();
@@ -230,9 +248,11 @@ Pipeline::Pipeline(const PipelineCtor &ctor) : device_(*ctor.device)
 	vkDestroyShaderModule(device, frag, nullptr);
 
 	auto fif = App::Instance()->GetFramesInFlight();
-	std::array<VkDescriptorPoolSize, 1> pool_sizes;
+	std::array<VkDescriptorPoolSize, 2> pool_sizes;
 	pool_sizes[0].type = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
 	pool_sizes[0].descriptorCount = uniform_descriptor_count * fif;
+	pool_sizes[1].type = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
+	pool_sizes[1].descriptorCount = combined_image_sampler_descriptor_count * fif;
 	VkDescriptorPoolCreateInfo pool_i{};
 	pool_i.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_POOL_CREATE_INFO;
 	pool_i.poolSizeCount = static_cast<uint32_t>(pool_sizes.size());
