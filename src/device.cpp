@@ -41,6 +41,7 @@ Device::Device(VendorPtr vkinst, VendorPtr vksurface, Ivec2 fbsize, bool vsync)
 	InitDevice_(vkinst, vksurface);
 	InitSwapchain_(vksurface, fbsize, vsync);
 	InitCommandPool_();
+	depth_buffer_ = new DepthBuffer(*this);
 	InitRenderPass_();
 	InitFramebuffers_();
 }
@@ -115,9 +116,13 @@ void Device::InitDevice_(VendorPtr vkinst, VendorPtr vksurface)
     device_ci.enabledExtensionCount = static_cast<uint32_t>(device_extensions.size());
     device_ci.ppEnabledExtensionNames = device_extensions.data();
 
+#ifndef NDEBUG
+
     auto validation_layer = "VK_LAYER_KHRONOS_validation";
     device_ci.enabledLayerCount = 1;
     device_ci.ppEnabledLayerNames = &validation_layer;
+
+#endif
 
 	VkDevice device;
     if (vkCreateDevice(phys, &device_ci, nullptr, &device) != VK_SUCCESS) {
@@ -296,21 +301,48 @@ void Device::InitRenderPass_()
     description.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
     description.finalLayout = VK_IMAGE_LAYOUT_PRESENT_SRC_KHR;
 
+	VkAttachmentDescription depthAttachment{};
+	depthAttachment.format = static_cast<VkFormat>(depth_buffer_->GetFormat());
+	depthAttachment.samples = VK_SAMPLE_COUNT_1_BIT;
+	depthAttachment.loadOp = VK_ATTACHMENT_LOAD_OP_CLEAR;
+	depthAttachment.storeOp = VK_ATTACHMENT_STORE_OP_DONT_CARE;
+	depthAttachment.stencilLoadOp = VK_ATTACHMENT_LOAD_OP_DONT_CARE;
+	depthAttachment.stencilStoreOp = VK_ATTACHMENT_STORE_OP_DONT_CARE;
+	depthAttachment.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
+	depthAttachment.finalLayout = VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL;
+
     VkAttachmentReference reference{};
     reference.attachment = 0;
     reference.layout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
+
+	VkAttachmentReference depthAttachmentRef{};
+	depthAttachmentRef.attachment = 1;
+	depthAttachmentRef.layout = VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL;
 
     VkSubpassDescription subpass{};
     subpass.pipelineBindPoint = VK_PIPELINE_BIND_POINT_GRAPHICS;
     subpass.colorAttachmentCount = 1;
     subpass.pColorAttachments = &reference;
+	subpass.pDepthStencilAttachment = &depthAttachmentRef;
+
+	VkSubpassDependency dependency{};
+	dependency.srcSubpass = VK_SUBPASS_EXTERNAL;
+	dependency.dstSubpass = 0;
+	dependency.srcStageMask = VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT | VK_PIPELINE_STAGE_EARLY_FRAGMENT_TESTS_BIT;
+	dependency.srcAccessMask = 0;
+	dependency.dstStageMask = VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT | VK_PIPELINE_STAGE_EARLY_FRAGMENT_TESTS_BIT;
+	dependency.dstAccessMask = VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT | VK_ACCESS_DEPTH_STENCIL_ATTACHMENT_WRITE_BIT;
+
+	std::array attachments = {description, depthAttachment};
 
     VkRenderPassCreateInfo render_pass_ci{};
     render_pass_ci.sType = VK_STRUCTURE_TYPE_RENDER_PASS_CREATE_INFO;
-    render_pass_ci.attachmentCount = 1;
-    render_pass_ci.pAttachments = &description;
+    render_pass_ci.attachmentCount = attachments.size();
+    render_pass_ci.pAttachments = attachments.data();
     render_pass_ci.subpassCount = 1;
     render_pass_ci.pSubpasses = &subpass;
+	render_pass_ci.dependencyCount = 1;
+	render_pass_ci.pDependencies = &dependency;
 
 	auto device = static_cast<VkDevice>(device_ptr_);
 
@@ -329,13 +361,16 @@ void Device::InitFramebuffers_()
 
     for (int i = 0; i < framebuffers_ptr_.size(); i++)
     {
-		VkImageView iv = static_cast<VkImageView>(image_views_ptr_[i]);
+		std::array attachments = {
+			static_cast<VkImageView>(image_views_ptr_[i]),
+			static_cast<VkImageView>(depth_buffer_->GetVkImageViewPtr_())
+		};
 
         VkFramebufferCreateInfo framebuffer_ci{};
         framebuffer_ci.sType = VK_STRUCTURE_TYPE_FRAMEBUFFER_CREATE_INFO;
         framebuffer_ci.renderPass = rp;
-        framebuffer_ci.attachmentCount = 1;
-        framebuffer_ci.pAttachments = &iv;
+        framebuffer_ci.attachmentCount = attachments.size();
+        framebuffer_ci.pAttachments = attachments.data();
         framebuffer_ci.width = swapchain_extent_.x;
         framebuffer_ci.height = swapchain_extent_.y;
         framebuffer_ci.layers = 1;
@@ -354,6 +389,7 @@ Device::~Device()
 	for (auto fb : framebuffers_ptr_)
 		vkDestroyFramebuffer(device, static_cast<VkFramebuffer>(fb), nullptr);
     vkDestroyRenderPass(device, static_cast<VkRenderPass>(render_pass_ptr_), nullptr);
+	delete depth_buffer_;
 	vkDestroyCommandPool(device, static_cast<VkCommandPool>(pool_ptr_), nullptr);
     for (auto view : image_views_ptr_)
         vkDestroyImageView(device, static_cast<VkImageView>(view), nullptr);
@@ -405,9 +441,12 @@ void CommandBuffer::RecordDraw(uint32_t fb_index, const std::function<void(CmdDr
 	auto ext = device_.GetSwapchainExtent();
     render_pass_i.renderArea.extent = VkExtent2D{ext.x, ext.y};
 
-    VkClearValue clear_color = { {{0.0f, 0.0f, 0.0f, 1.0f}} };
-    render_pass_i.clearValueCount = 1;
-    render_pass_i.pClearValues = &clear_color;
+	std::array<VkClearValue, 2> clear_color;
+	clear_color[0].color = {{0.0f, 0.0f, 0.0f, 1.0f}};
+	clear_color[1].depthStencil = {1.f, 0};
+
+    render_pass_i.clearValueCount = clear_color.size();
+    render_pass_i.pClearValues = clear_color.data();
 
     vkCmdBeginRenderPass(buffer, &render_pass_i, VK_SUBPASS_CONTENTS_INLINE);
 

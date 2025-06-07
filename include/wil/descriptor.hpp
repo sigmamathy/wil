@@ -1,6 +1,7 @@
 #pragma once
 
 #include "pipeline.hpp"
+#include "buffer.hpp"
 
 namespace wil {
 

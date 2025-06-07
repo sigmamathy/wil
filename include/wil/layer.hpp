@@ -29,7 +29,7 @@ private:
 
 struct Vertex3D
 {
-	Fvec2 pos;
+	Fvec3 pos;
 	Fvec2 texcoord;
 };
 

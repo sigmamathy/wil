@@ -44,6 +44,8 @@ static void InitAPIs_()
     uint32_t glfw_ext_count;
     const char **glfw_extensions = glfwGetRequiredInstanceExtensions(&glfw_ext_count);
 
+#ifndef NDEBUG
+
     auto constexpr validation_layer = "VK_LAYER_KHRONOS_validation";
 
     // check if system support VK_LAYER_KHRONOS_validation layer
@@ -84,22 +86,39 @@ static void InitAPIs_()
     debug_ci.pUserData = nullptr;
     inst_ci.pNext = &debug_ci;
 
+#else
+
+    // setup extensions (glfw)
+    inst_ci.enabledLayerCount = 0;
+    inst_ci.enabledExtensionCount = glfw_ext_count;
+    inst_ci.ppEnabledExtensionNames = glfw_extensions;
+
+#endif
+
     if (vkCreateInstance(&inst_ci, nullptr, &vkinstance_) != VK_SUCCESS) {
 		LogFatal("Unable to initialize Vulkan 1.3");
 	}
+
+#ifndef NDEBUG
 
     auto func = reinterpret_cast<PFN_vkCreateDebugUtilsMessengerEXT>(
         vkGetInstanceProcAddr(vkinstance_, "vkCreateDebugUtilsMessengerEXT"));
 	if (!func) LogErr("Unable to locate vkCreateDebugUtilsMessengerEXT");
     func(vkinstance_, &debug_ci, nullptr, &vkdebug_);
+
+#endif
 }
 
 static void TerminateAPIs_()
 {
+#ifndef NDEBUG
+
     auto func = reinterpret_cast<PFN_vkDestroyDebugUtilsMessengerEXT>(
         vkGetInstanceProcAddr(vkinstance_, "vkDestroyDebugUtilsMessengerEXT"));
 	if (!func) LogErr("Unable to locate vkDestroyDebugUtilsMessengerEXT");
     func(vkinstance_, vkdebug_, nullptr);
+
+#endif
 
 	vkDestroyInstance(vkinstance_, nullptr);
 	glfwTerminate();

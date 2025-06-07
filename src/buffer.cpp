@@ -386,7 +386,6 @@ Texture::Texture(Device &device, const std::string &path)
 		LogErr("Unable to create texture image view");
 	image_view_ptr_ = image_view;
 
-
 	VkSamplerCreateInfo samplerInfo{};
 	samplerInfo.sType = VK_STRUCTURE_TYPE_SAMPLER_CREATE_INFO;
 	samplerInfo.magFilter = VK_FILTER_LINEAR;
@@ -417,6 +416,75 @@ Texture::~Texture()
 {
 	auto dev = static_cast<VkDevice>(device_.GetVkDevicePtr_());
 	vkDestroySampler(dev, static_cast<VkSampler>(sampler_ptr_), nullptr);
+	vkDestroyImageView(dev, static_cast<VkImageView>(image_view_ptr_), nullptr);
+	vkDestroyImage(dev, static_cast<VkImage>(image_ptr_), nullptr);
+    vkFreeMemory(dev, static_cast<VkDeviceMemory>(memory_ptr_), nullptr);
+}
+
+static VkFormat FindSupportedFormat_(VkPhysicalDevice pd,
+		const std::vector<VkFormat>& candidates, VkImageTiling tiling, VkFormatFeatureFlags features)
+{
+    for (VkFormat format : candidates) {
+        VkFormatProperties props;
+        vkGetPhysicalDeviceFormatProperties(pd, format, &props);
+
+        if (tiling == VK_IMAGE_TILING_LINEAR && (props.linearTilingFeatures & features) == features) {
+            return format;
+        } else if (tiling == VK_IMAGE_TILING_OPTIMAL && (props.optimalTilingFeatures & features) == features) {
+            return format;
+        }
+    }
+
+	LogErr("Unable to find a suitable format");
+	return VK_FORMAT_UNDEFINED;
+}
+
+DepthBuffer::DepthBuffer(Device &device) : device_(device)
+{
+	auto dev = static_cast<VkDevice>(device.GetVkDevicePtr_());
+	auto pd = static_cast<VkPhysicalDevice>(device.GetVkPhysicalDevicePtr_());
+
+	VkFormat format = FindSupportedFormat_(
+			pd,
+			{VK_FORMAT_D32_SFLOAT, VK_FORMAT_D32_SFLOAT_S8_UINT, VK_FORMAT_D24_UNORM_S8_UINT},
+			VK_IMAGE_TILING_OPTIMAL,
+			VK_FORMAT_FEATURE_DEPTH_STENCIL_ATTACHMENT_BIT);
+
+	format_ = format;
+
+	auto [image, mem] = CreateImageAndAllocateMemory_(
+			dev,
+			pd,
+			device.GetSwapchainExtent().x,
+			device.GetSwapchainExtent().y,
+			format,
+			VK_IMAGE_TILING_OPTIMAL,
+			VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT,
+			VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT);
+
+	image_ptr_ = image;
+	memory_ptr_ = mem;
+
+	VkImageViewCreateInfo view_ci{};
+	view_ci.sType = VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO;
+	view_ci.image = image;
+	view_ci.viewType = VK_IMAGE_VIEW_TYPE_2D;
+	view_ci.format = format;
+	view_ci.subresourceRange.aspectMask = VK_IMAGE_ASPECT_DEPTH_BIT;
+	view_ci.subresourceRange.baseMipLevel = 0;
+	view_ci.subresourceRange.levelCount = 1;
+	view_ci.subresourceRange.baseArrayLayer = 0;
+	view_ci.subresourceRange.layerCount = 1;
+
+	VkImageView image_view;
+	if (vkCreateImageView(dev, &view_ci, nullptr, &image_view) != VK_SUCCESS)
+		LogErr("Unable to create texture image view");
+	image_view_ptr_ = image_view;
+}
+
+DepthBuffer::~DepthBuffer()
+{
+	auto dev = static_cast<VkDevice>(device_.GetVkDevicePtr_());
 	vkDestroyImageView(dev, static_cast<VkImageView>(image_view_ptr_), nullptr);
 	vkDestroyImage(dev, static_cast<VkImage>(image_ptr_), nullptr);
     vkFreeMemory(dev, static_cast<VkDeviceMemory>(memory_ptr_), nullptr);

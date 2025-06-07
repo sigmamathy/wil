@@ -66,6 +66,7 @@ private:
 
 	VendorPtr pool_ptr_;
 
+	class DepthBuffer *depth_buffer_;
 	VendorPtr render_pass_ptr_;
 	std::vector<VendorPtr> framebuffers_ptr_;
 

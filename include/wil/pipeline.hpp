@@ -1,7 +1,6 @@
 #pragma once
 
 #include "device.hpp"
-#include "buffer.hpp"
 #include <utility>
 #include <cstdint>
 #include <vector>
@@ -55,6 +54,7 @@ struct PipelineCtor
 	std::vector<VertexAttribLayout> vertex_layout;
 	uint32_t vertex_stride;
 	std::vector<DescriptorSetLayout> descriptor_set_layouts;
+	bool depth_test = true;
 };
 
 class Pipeline

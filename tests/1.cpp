@@ -10,17 +10,23 @@
 #include <GLFW/glfw3.h>
 
 using wil::Fvec2;
+using wil::Fvec3;
 
 static std::vector<wil::Vertex3D> vertices = {
-	{{-0.5f, 0.5f}, {0, 1}},
-	{{0.5f, 0.5f}, {1, 1}},
-	{{0.5f, -0.5f}, {1, 0}},
-	{{-0.5f, -0.5f}, {0, 0}},
+	{{-0.5f, 0.0f, -0.5f}, {0.0f, 0.0f}},
+    {{0.5f, 0.0f, -0.5f}, {1.0f, 0.0f}},
+    {{0.5f, 0.0f, 0.5f}, {1.0f, 1.0f}},
+    {{-0.5f, 0.0f, 0.5f}, {0.0f, 1.0f}},
+
+    {{-0.5f, -0.5f, -0.5f}, {0.0f, 0.0f}},
+    {{0.5f, -0.5f, -0.5f}, {1.0f, 0.0f}},
+    {{0.5f, -0.5f, 0.5f}, {1.0f, 1.0f}},
+    {{-0.5f, -0.5f, 0.5f}, {0.0f, 1.0f}}
 };
 
-static std::array<unsigned, 6> indices = {
-	0, 1, 2,
-	0, 2, 3,
+static std::vector<unsigned> indices = {
+	0, 1, 2, 2, 3, 0,
+    4, 5, 6, 6, 7, 4,
 };
 
 class MyLayer : public wil::Layer3D
@@ -64,7 +70,7 @@ public:
 
 		wil::MVP3D mvp;
 		mvp.proj = wil::Transpose(wil::PerspectiveProjection(2.0944f, 16.f/9, .1f, 100.f));
-		mvp.view = wil::Transpose(wil::LookAtView(wil::Fvec3(0.0f, 0.f, -1.f), wil::Fvec3(0.0f, 0.f, 1.f)));
+		mvp.view = wil::Transpose(wil::LookAtView(Fvec3(0.0f, -1.f, -1.f), Fvec3(0.0f, 1.f, 1.f)));
 		mvp.model = wil::Transpose(wil::RotateModel(glfwGetTime(), wil::Fvec3(0.f, 1.f, 0.f)));
 
 		uniforms[frame]->Update(&mvp);
@@ -77,7 +83,7 @@ public:
 			auto size = wil::App::Instance()->GetWindow().GetFramebufferSize();
 			cmd.SetViewport({0, 0}, size);
 			cmd.SetScissor({0, 0}, size);
-			cmd.DrawIndexed(6, 1);
+			cmd.DrawIndexed(indices.size(), 1);
 		});
 
 		return cb;
@@ -115,8 +121,5 @@ public:
 	}
 };
 
-int main(int argc, char **argv) {
-	MyApp app;
-	wil::appimpl(&app, argc, argv);
-	return 0;
-}
+WIL_IMPLEMENT_APP(MyApp)
+

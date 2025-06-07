@@ -176,6 +176,18 @@ Pipeline::Pipeline(const PipelineCtor &ctor) : device_(*ctor.device), descriptor
 		dslptr.push_back(layout);
 	}
 
+	VkPipelineDepthStencilStateCreateInfo depthStencil{};
+	depthStencil.sType = VK_STRUCTURE_TYPE_PIPELINE_DEPTH_STENCIL_STATE_CREATE_INFO;
+	depthStencil.depthTestEnable = ctor.depth_test;
+	depthStencil.depthWriteEnable = ctor.depth_test;
+	depthStencil.depthCompareOp = VK_COMPARE_OP_LESS;
+	depthStencil.depthBoundsTestEnable = VK_FALSE;
+	depthStencil.minDepthBounds = 0.0f; // Optional
+	depthStencil.maxDepthBounds = 1.0f; // Optional
+	depthStencil.stencilTestEnable = VK_FALSE;
+	depthStencil.front = {}; // Optional
+	depthStencil.back = {}; // Optional
+
 	VkPipelineLayoutCreateInfo pipeline_layout_ci{};
 	pipeline_layout_ci.sType = VK_STRUCTURE_TYPE_PIPELINE_LAYOUT_CREATE_INFO;
 	pipeline_layout_ci.setLayoutCount = dslptr.size();
@@ -195,13 +207,14 @@ Pipeline::Pipeline(const PipelineCtor &ctor) : device_(*ctor.device), descriptor
 	pipeline_ci.pMultisampleState = &multisampling_ci;
 	pipeline_ci.pColorBlendState = &blending_ci;
 	pipeline_ci.pDynamicState = &dynamic_state_ci;
+	pipeline_ci.pDepthStencilState = &depthStencil;
 	pipeline_ci.layout = static_cast<VkPipelineLayout>(layout_ptr_);
 	pipeline_ci.renderPass = static_cast<VkRenderPass>(ctor.device->GetVkRenderPassPtr_());
 	pipeline_ci.subpass = 0;
 	pipeline_ci.basePipelineHandle = VK_NULL_HANDLE;
 
 	 if (vkCreateGraphicsPipelines(device, VK_NULL_HANDLE, 1, &pipeline_ci, nullptr, reinterpret_cast<VkPipeline*>(&pipeline_ptr_)) != VK_SUCCESS)
-		 LogErr("Unabke to create render pipeline");
+		 LogErr("Unable to create render pipeline");
 
 	vkDestroyShaderModule(device, vert, nullptr);
 	vkDestroyShaderModule(device, frag, nullptr);

@@ -64,8 +64,6 @@ public:
 
 	WIL_DELETE_COPY_AND_REASSIGNMENT(UniformBuffer);
 
-	// UniformBuffer(UniformBuffer&&) = default;
-
     void Update(const void* src);
 
 	VendorPtr GetVkBufferPtr_() const { return buffer_ptr_; }
@@ -102,6 +100,29 @@ private:
 	VendorPtr memory_ptr_;
 	VendorPtr image_view_ptr_;
 	VendorPtr sampler_ptr_;
+};
+
+class DepthBuffer
+{
+public:
+
+	DepthBuffer(Device &dev);
+
+	~DepthBuffer();
+
+	uint32_t GetFormat() const { return format_; }
+
+	VendorPtr GetVkImageViewPtr_() const { return image_view_ptr_; }
+
+private:
+
+	Device &device_;
+
+	VendorPtr image_ptr_;
+	VendorPtr memory_ptr_;
+	VendorPtr image_view_ptr_;
+
+	uint32_t format_;
 };
 
 }
