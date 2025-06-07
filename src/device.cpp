@@ -28,11 +28,13 @@ void Device::RecreateSwapchain(Window *window, Ivec2 fbsize, bool vsync)
 
 	for (auto fb : framebuffers_ptr_)
 		vkDestroyFramebuffer(device, static_cast<VkFramebuffer>(fb), nullptr);
+	delete depth_buffer_;
     for (auto view : image_views_ptr_)
         vkDestroyImageView(device, static_cast<VkImageView>(view), nullptr);
     vkDestroySwapchainKHR(device, static_cast<VkSwapchainKHR>(swapchain_ptr_), nullptr);
 
 	InitSwapchain_(window->GetVkSurfacePtr_(), fbsize, vsync);
+	depth_buffer_ = new DepthBuffer(*this);
 	InitFramebuffers_();
 }
 
