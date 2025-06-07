@@ -86,6 +86,8 @@ public:
 
 	Texture(Device &dev, const std::string &path);
 
+	Texture(Device &dev, const void *data, size_t size, uint32_t width, uint32_t height);
+
 	~Texture();
 
 	VendorPtr GetVkImageViewPtr_() const { return image_view_ptr_; }
@@ -93,6 +95,8 @@ public:
 	VendorPtr GetVkSamplerPtr_() const { return sampler_ptr_; }
 
 private:
+
+	void Init_(Device &dev, const void *data, size_t size, uint32_t width, uint32_t height);
 
 	Device &device_;
 

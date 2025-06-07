@@ -333,6 +333,19 @@ Texture::Texture(Device &device, const std::string &path)
 
 	if (!pixels) WIL_LOGERROR("Unable to load image {}", path);
 
+	Init_(device, pixels, size, width, height);
+
+	stbi_image_free(pixels);
+}
+
+Texture::Texture(Device &device, const void *data, size_t size, uint32_t width, uint32_t height) : device_(device)
+{
+	Init_(device, data, size, width, height);
+}
+
+void Texture::Init_(Device &device, const void *pixels, size_t size, uint32_t width, uint32_t height)
+{
+
     auto [sb, sbm] = CreateBufferAndAllocateMemory_(
 			static_cast<VkDevice>(device.GetVkDevicePtr_()),
 			static_cast<VkPhysicalDevice>(device.GetVkPhysicalDevicePtr_()),
@@ -348,7 +361,6 @@ Texture::Texture(Device &device, const std::string &path)
 	memcpy(data, pixels, static_cast<size_t>(size));
 	vkUnmapMemory(dev, sbm);
 
-	stbi_image_free(pixels);
 
 	auto [image, mem] = CreateImageAndAllocateMemory_(
 			dev,

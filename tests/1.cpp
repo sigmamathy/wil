@@ -5,9 +5,11 @@
 #include "wil/buffer.hpp"
 #include "wil/transform.hpp"
 #include "wil/descriptor.hpp"
+#include "wil/model.hpp"
 #include "wil/log.hpp"
 
 #include <GLFW/glfw3.h>
+#include <cstring>
 
 using wil::Fvec2;
 using wil::Fvec3;
@@ -61,6 +63,13 @@ public:
 			sets[i].BindUniform(0, *uniforms[i]);
 			sets[i].BindTexture(1, *texture);
 		}
+
+		wil::Model model(device, "../../tests/Duck.glb", sizeof(wil::Vertex3D), [](void *data, Fvec3 pos, Fvec2 texcoord){
+			wil::Vertex3D v;
+			v.pos = pos;
+			v.texcoord = texcoord;
+			std::memcpy(data, &v, sizeof(wil::Vertex3D));
+		});
 	}
 
 	wil::CommandBuffer &Render(uint32_t frame, uint32_t index) override

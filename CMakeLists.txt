@@ -22,6 +22,7 @@ add_library(${PROJECT_NAME}
 	"src/scene.cpp"
 	"src/transform.cpp"
 	"src/descriptor.cpp"
+	"src/model.cpp"
 )
 
 target_include_directories(${PROJECT_NAME} PUBLIC "include" "deps/stb/include" "deps/tinygltf/include")
