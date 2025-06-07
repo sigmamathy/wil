@@ -36,7 +36,7 @@ CreateBufferAndAllocateMemory_(VkDevice device, VkPhysicalDevice pd, VkDeviceSiz
     buffer_ci.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
 
     if (vkCreateBuffer(device, &buffer_ci, nullptr, &result.first) != VK_SUCCESS)
-		LogErr("Unable to create buffer");
+		WIL_LOGERROR("Unable to create buffer");
 
     VkMemoryRequirements req;
     vkGetBufferMemoryRequirements(device, result.first, &req);
@@ -47,7 +47,7 @@ CreateBufferAndAllocateMemory_(VkDevice device, VkPhysicalDevice pd, VkDeviceSiz
     allocInfo.memoryTypeIndex = FindMemoryTypeIndex_(pd, req.memoryTypeBits, props);
 
     if (vkAllocateMemory(device, &allocInfo, nullptr, &result.second) != VK_SUCCESS)
-		LogErr("Unable to allocate buffer memory");
+		WIL_LOGERROR("Unable to allocate buffer memory");
 
     vkBindBufferMemory(device, result.first, result.second, 0);
 
@@ -64,7 +64,7 @@ static VkCommandBuffer BeginSingleTimeCommandBuffer_(Device &device)
 
 	VkCommandBuffer cb;
     if (vkAllocateCommandBuffers(static_cast<VkDevice>(device.GetVkDevicePtr_()), &info, &cb) != VK_SUCCESS)
-		LogErr("Unable to create command buffer");
+		WIL_LOGERROR("Unable to create command buffer");
 
     VkCommandBufferBeginInfo begin_i{};
     begin_i.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO;
@@ -224,7 +224,7 @@ CreateImageAndAllocateMemory_(VkDevice dev, VkPhysicalDevice pd, uint32_t width,
 	
 	VkImage image;
 	if (vkCreateImage(dev, &image_ci, nullptr, &image) != VK_SUCCESS)
-		LogErr("Unable to create image");
+		WIL_LOGERROR("Unable to create image");
 
 	VkMemoryRequirements memreq;
 	vkGetImageMemoryRequirements(dev, image, &memreq);
@@ -236,7 +236,7 @@ CreateImageAndAllocateMemory_(VkDevice dev, VkPhysicalDevice pd, uint32_t width,
 
 	VkDeviceMemory image_mem;
 	if (vkAllocateMemory(dev, &allocInfo, nullptr, &image_mem) != VK_SUCCESS)
-		LogErr("Unable to allocate image memory");
+		WIL_LOGERROR("Unable to allocate image memory");
 
 	vkBindImageMemory(dev, image, image_mem, 0);
 
@@ -279,7 +279,7 @@ static void TransitionImageLayout_(Device &device, VkImage image, VkFormat forma
 	} 
 	else 
 	{
-		LogErr("Invalid argument in transitioning image layout");
+		WIL_LOGERROR("Invalid argument in transitioning image layout");
 	}
 
 	vkCmdPipelineBarrier(
@@ -331,7 +331,7 @@ Texture::Texture(Device &device, const std::string &path)
 	stbi_uc* pixels = stbi_load(path.c_str(), &width, &height, &channels, STBI_rgb_alpha);
 	VkDeviceSize size = width * height * 4;
 
-	if (!pixels) LogErr("Unable to load image " + path);
+	if (!pixels) WIL_LOGERROR("Unable to load image {}", path);
 
     auto [sb, sbm] = CreateBufferAndAllocateMemory_(
 			static_cast<VkDevice>(device.GetVkDevicePtr_()),
@@ -383,7 +383,7 @@ Texture::Texture(Device &device, const std::string &path)
 
 	VkImageView image_view;
 	if (vkCreateImageView(dev, &viewInfo, nullptr, &image_view) != VK_SUCCESS)
-		LogErr("Unable to create texture image view");
+		WIL_LOGERROR("Unable to create texture image view");
 	image_view_ptr_ = image_view;
 
 	VkSamplerCreateInfo samplerInfo{};
@@ -408,7 +408,7 @@ Texture::Texture(Device &device, const std::string &path)
 	
 	VkSampler sampler;
 	if (vkCreateSampler(dev, &samplerInfo, nullptr, &sampler) != VK_SUCCESS)
-		LogErr("Unable to create texture sampler");
+		WIL_LOGERROR("Unable to create texture sampler");
 	sampler_ptr_ = sampler;
 }
 
@@ -435,7 +435,7 @@ static VkFormat FindSupportedFormat_(VkPhysicalDevice pd,
         }
     }
 
-	LogErr("Unable to find a suitable format");
+	WIL_LOGERROR("Unable to find a suitable format");
 	return VK_FORMAT_UNDEFINED;
 }
 
@@ -478,7 +478,7 @@ DepthBuffer::DepthBuffer(Device &device) : device_(device)
 
 	VkImageView image_view;
 	if (vkCreateImageView(dev, &view_ci, nullptr, &image_view) != VK_SUCCESS)
-		LogErr("Unable to create texture image view");
+		WIL_LOGERROR("Unable to create texture image view");
 	image_view_ptr_ = image_view;
 }
 

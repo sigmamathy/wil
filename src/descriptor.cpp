@@ -34,7 +34,7 @@ DescriptorPool::DescriptorPool(Pipeline &pipeline, const std::vector<uint32_t> &
 
 	VkDescriptorPool pool;
 	if (vkCreateDescriptorPool(device, &pool_i, nullptr, &pool) != VK_SUCCESS)
-		LogErr("Unable to create descriptor pool");
+		WIL_LOGERROR("Unable to create descriptor pool");
 	pool_ptr_ = pool;
 }
 
@@ -58,7 +58,7 @@ std::vector<DescriptorSet> DescriptorPool::AllocateSets(uint32_t set, uint32_t c
 	std::vector<VkDescriptorSet> sets;
 	sets.resize(count);
 	if (vkAllocateDescriptorSets(device, &desc_set_ai, sets.data()) != VK_SUCCESS)
-		LogErr("Unable to allocate descriptor sets");
+		WIL_LOGERROR("Unable to allocate descriptor sets");
 
 	std::vector<DescriptorSet> result;
 	result.reserve(count);

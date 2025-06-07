@@ -73,6 +73,8 @@ public:
 		mvp.view = wil::Transpose(wil::LookAtView(Fvec3(0.0f, -1.f, -1.f), Fvec3(0.0f, 1.f, 1.f)));
 		mvp.model = wil::Transpose(wil::RotateModel(glfwGetTime(), wil::Fvec3(0.f, 1.f, 0.f)));
 
+		WIL_LOGINFO("Model rotation {}", glfwGetTime());
+
 		uniforms[frame]->Update(&mvp);
 
 		cb.RecordDraw(index, [this, frame](wil::CmdDraw &cmd){

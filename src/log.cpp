@@ -16,24 +16,26 @@ std::string GetCurrentTime_()
     return ss.str();
 }
 
-void LogInfo(std::string const& msg)
+void LogMessage_(LogSeverity severity, const std::string &str)
 {
-	std::cout << "[INFO " << GetCurrentTime_() << "] " << msg << '\n';
-}
+	switch (severity)
+	{
+		case LOG_SEVERITY_INFO:
+			std::cout << "[INFO " << GetCurrentTime_() << "] " << str << '\n';
+			break;
 
-void LogWarn(std::string const& msg)
-{
-	std::cout << "[\033[33mWARN\033[0m " << GetCurrentTime_() << "] \033[33m" << msg << "\033[0m\n";
-}
+		case LOG_SEVERITY_WARN:
+			std::cout << "[\033[33mWARN\033[0m " << GetCurrentTime_() << "] \033[33m" << str << "\033[0m\n";
+			break;
 
-void LogErr(std::string const& msg)
-{
-	std::cout << "[\033[31mERRO\033[0m " << GetCurrentTime_() << "] \033[31m" << msg << "\033[0m\n";
-}
+		case LOG_SEVERITY_ERROR:
+			std::cout << "[\033[31mERRO\033[0m " << GetCurrentTime_() << "] \033[31m" << str << "\033[0m\n";
+			break;
 
-void LogFatal(std::string const& msg)
-{
-	std::cout << "[\033[35mFATL\033[0m " << GetCurrentTime_() << "] \033[35m" << msg << "\033[0m\n";
+		case LOG_SEVERITY_FATAL:
+			std::cout << "[\033[35mFATL\033[0m " << GetCurrentTime_() << "] \033[35m" << str << "\033[0m\n";
+			break;
+	}
 }
 
 void LogVulkan(int severity, const std::string &msg)

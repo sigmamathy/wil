@@ -67,14 +67,14 @@ Window::Window(void *vkinst, const WindowCtor &ctor) : vkinst_(vkinst), event_ha
 	glfwWindowHint(GLFW_RESIZABLE, ctor.resizable);
 	GLFWwindow* window = glfwCreateWindow(ctor.size.x, ctor.size.y, ctor.title.c_str(), 0, 0);
 	if (!window)
-		LogFatal("Unable to create GLFW window");
+		WIL_LOGFATAL("Unable to create GLFW window");
 	window_ptr_ = window;
     glfwSetWindowUserPointer(window, &event_handler_);
     CreateWindowCallback_(window);
 
 	VkSurfaceKHR surface;
 	if (glfwCreateWindowSurface(static_cast<VkInstance>(vkinst), window, nullptr, &surface) != VK_SUCCESS)
-		LogFatal("Unable to create window surface");
+		WIL_LOGFATAL("Unable to create window surface");
 	surface_ptr_ = surface;
 }
 

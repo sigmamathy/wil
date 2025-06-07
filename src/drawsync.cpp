@@ -19,20 +19,20 @@ DrawPresentSynchronizer::DrawPresentSynchronizer(Device &device, uint32_t num_of
 
 	VkSemaphore ia;
 	if (vkCreateSemaphore(dev, &semaphore_ci, nullptr, &ia) != VK_SUCCESS)
-		LogErr("Unable to create semaphore");
+		WIL_LOGERROR("Unable to create semaphore");
 	image_available_semaphore_ = ia;
 
 	render_semaphores_.reserve(num_of_render);
 	for (int i = 0; i < num_of_render; ++i) {
 		VkSemaphore sm;
 		if (vkCreateSemaphore(dev, &semaphore_ci, nullptr, &sm) != VK_SUCCESS)
-			LogErr("Unable to create semaphore");
+			WIL_LOGERROR("Unable to create semaphore");
 		render_semaphores_.push_back(sm);
 	}
 
 	VkFence fence;
 	if (vkCreateFence(dev, &fence_ci, nullptr, &fence) != VK_SUCCESS)
-		LogErr("Unable to create fence");
+		WIL_LOGERROR("Unable to create fence");
 	in_flight_fence_ = fence;
 }
 
@@ -54,15 +54,14 @@ bool DrawPresentSynchronizer::AcquireImageIndex(uint32_t *index)
     VkResult r = vkAcquireNextImageKHR(dev, static_cast<VkSwapchainKHR>(device_.GetVkSwapchainPtr_()), UINT64_MAX,
 			static_cast<VkSemaphore>(image_available_semaphore_), VK_NULL_HANDLE, index);
 	if (r == VK_ERROR_OUT_OF_DATE_KHR) return false;
-	else if (r != VK_SUCCESS && r != VK_SUBOPTIMAL_KHR) LogErr("Unable to acquire image index");
+	else if (r != VK_SUCCESS && r != VK_SUBOPTIMAL_KHR) WIL_LOGERROR("Unable to acquire image index");
     return true;
 }
 
 void DrawPresentSynchronizer::SubmitDraw(const std::vector<CommandBuffer*> &buffers)
 {
 	if (buffers.size() != render_semaphores_.size())
-		LogWarn("Number of command buffers provided is " + std::to_string(buffers.size())
-				+ ", expected " + std::to_string(render_semaphores_.size()));
+		WIL_LOGWARN("Number of command buffers provided is {}, expected {}", buffers.size(), render_semaphores_.size());
 
     VkPipelineStageFlags wait_stages[] = {VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT};
 	
@@ -85,7 +84,7 @@ void DrawPresentSynchronizer::SubmitDraw(const std::vector<CommandBuffer*> &buff
 
     if (vkQueueSubmit(static_cast<VkQueue>(device_.GetGraphicsQueue().vkqueue), 1, &submit,
 				buffers.size() == 1 ? in_flight : VK_NULL_HANDLE) != VK_SUCCESS)
-		LogErr("Unable to submit draw command");
+		WIL_LOGERROR("Unable to submit draw command");
 
 	for (size_t i = 1; i < buffers.size(); ++i)
 	{
@@ -105,7 +104,7 @@ void DrawPresentSynchronizer::SubmitDraw(const std::vector<CommandBuffer*> &buff
 
 		if (vkQueueSubmit(static_cast<VkQueue>(device_.GetGraphicsQueue().vkqueue), 1, &submit,
 					i == buffers.size() - 1 ? in_flight : VK_NULL_HANDLE) != VK_SUCCESS)
-			LogErr("Unable to submit draw command");
+			WIL_LOGERROR("Unable to submit draw command");
 	}
 }
 
@@ -124,7 +123,7 @@ bool DrawPresentSynchronizer::PresentToScreen(uint32_t image_index)
 
     VkResult r = vkQueuePresentKHR(static_cast<VkQueue>(device_.GetPresentQueue().vkqueue), &presentInfo);
 	if (r == VK_ERROR_OUT_OF_DATE_KHR) return false;
-	else if (r != VK_SUCCESS && r != VK_SUBOPTIMAL_KHR) LogErr("Unable to present to screen");
+	else if (r != VK_SUCCESS && r != VK_SUBOPTIMAL_KHR) WIL_LOGERROR("Unable to present to screen");
 	return true;
 }
 

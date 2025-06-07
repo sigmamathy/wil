@@ -20,7 +20,7 @@ static VkShaderModule CreateShaderModule_(VkDevice device, char const* path)
 {
     std::ifstream ifs(path, std::ios::ate | std::ios::binary);
 	if (!ifs.is_open())
-		LogErr("Unable to open file " + std::string(path));
+		WIL_LOGERROR("Unable to open file {}", path);
     size_t fsize = ifs.tellg();
     std::vector<char> buffer(fsize);
     ifs.seekg(0);
@@ -34,7 +34,7 @@ static VkShaderModule CreateShaderModule_(VkDevice device, char const* path)
 
     VkShaderModule module;
     if (vkCreateShaderModule(device, &shader_ci, nullptr, &module) != VK_SUCCESS)
-		LogErr("Unable to create shader module with file " + std::string(path));
+		WIL_LOGERROR("Unable to create shader module with file {}", path);
     return module;
 }
 
@@ -171,7 +171,7 @@ Pipeline::Pipeline(const PipelineCtor &ctor) : device_(*ctor.device), descriptor
 
 		VkDescriptorSetLayout layout;
 		if (vkCreateDescriptorSetLayout(device, &layout_ci, nullptr, &layout) != VK_SUCCESS)
-			LogErr("Unable to create descriptor set layout");
+			WIL_LOGERROR("Unable to create descriptor set layout");
 		dsl.descriptor_set_layout_ptr_ = layout;
 		dslptr.push_back(layout);
 	}
@@ -194,7 +194,7 @@ Pipeline::Pipeline(const PipelineCtor &ctor) : device_(*ctor.device), descriptor
 	pipeline_layout_ci.pSetLayouts = dslptr.size() ? dslptr.data() : nullptr;
 
 	if (vkCreatePipelineLayout(device, &pipeline_layout_ci, nullptr, reinterpret_cast<VkPipelineLayout*>(&layout_ptr_)) != VK_SUCCESS)
-		LogErr("Unable to create pipeline layout");
+		WIL_LOGERROR("Unable to create pipeline layout");
 
 	VkGraphicsPipelineCreateInfo pipeline_ci{};
 	pipeline_ci.sType = VK_STRUCTURE_TYPE_GRAPHICS_PIPELINE_CREATE_INFO;
@@ -214,7 +214,7 @@ Pipeline::Pipeline(const PipelineCtor &ctor) : device_(*ctor.device), descriptor
 	pipeline_ci.basePipelineHandle = VK_NULL_HANDLE;
 
 	 if (vkCreateGraphicsPipelines(device, VK_NULL_HANDLE, 1, &pipeline_ci, nullptr, reinterpret_cast<VkPipeline*>(&pipeline_ptr_)) != VK_SUCCESS)
-		 LogErr("Unable to create render pipeline");
+		 WIL_LOGERROR("Unable to create render pipeline");
 
 	vkDestroyShaderModule(device, vert, nullptr);
 	vkDestroyShaderModule(device, frag, nullptr);

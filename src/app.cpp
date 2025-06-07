@@ -58,7 +58,7 @@ static void InitAPIs_()
 			return std::strcmp(prop.layerName, validation_layer) == 0;
         }) == av_layers.end())
 	{
-		LogErr("Unable to find VK_LAYER_KHRONOS_validation layer");
+		WIL_LOGERROR("Unable to find VK_LAYER_KHRONOS_validation layer");
 	}
 
     // setup validation layer
@@ -96,14 +96,14 @@ static void InitAPIs_()
 #endif
 
     if (vkCreateInstance(&inst_ci, nullptr, &vkinstance_) != VK_SUCCESS) {
-		LogFatal("Unable to initialize Vulkan 1.3");
+		WIL_LOGFATAL("Unable to initialize Vulkan 1.3");
 	}
 
 #ifndef NDEBUG
 
     auto func = reinterpret_cast<PFN_vkCreateDebugUtilsMessengerEXT>(
         vkGetInstanceProcAddr(vkinstance_, "vkCreateDebugUtilsMessengerEXT"));
-	if (!func) LogErr("Unable to locate vkCreateDebugUtilsMessengerEXT");
+	if (!func) WIL_LOGERROR("Unable to locate vkCreateDebugUtilsMessengerEXT");
     func(vkinstance_, &debug_ci, nullptr, &vkdebug_);
 
 #endif
@@ -115,7 +115,7 @@ static void TerminateAPIs_()
 
     auto func = reinterpret_cast<PFN_vkDestroyDebugUtilsMessengerEXT>(
         vkGetInstanceProcAddr(vkinstance_, "vkDestroyDebugUtilsMessengerEXT"));
-	if (!func) LogErr("Unable to locate vkDestroyDebugUtilsMessengerEXT");
+	if (!func) WIL_LOGERROR("Unable to locate vkDestroyDebugUtilsMessengerEXT");
     func(vkinstance_, vkdebug_, nullptr);
 
 #endif

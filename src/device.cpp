@@ -53,7 +53,7 @@ void Device::InitDevice_(VendorPtr vkinst, VendorPtr vksurface)
     uint32_t device_count = 0;
     vkEnumeratePhysicalDevices(instance, &device_count, nullptr);
 	if (!device_count) {
-		LogFatal("No physical rendering device can be found");
+		WIL_LOGFATAL("No physical rendering device can be found");
 	}
 
     device_count = 1; // choose the first device
@@ -89,7 +89,7 @@ void Device::InitDevice_(VendorPtr vkinst, VendorPtr vksurface)
     }
 
 	if (!graphics_ok || !present_ok) {
-		LogFatal("The primary physical device does not support graphics or present operation");
+		WIL_LOGFATAL("The primary physical device does not support graphics or present operation");
 	}
 
     std::vector<VkDeviceQueueCreateInfo> queue_create_infos;
@@ -126,7 +126,7 @@ void Device::InitDevice_(VendorPtr vkinst, VendorPtr vksurface)
 
 	VkDevice device;
     if (vkCreateDevice(phys, &device_ci, nullptr, &device) != VK_SUCCESS) {
-		LogFatal("Unable to create logical device");
+		WIL_LOGFATAL("Unable to create logical device");
 	}
 
 	device_ptr_ = device;
@@ -240,7 +240,7 @@ void Device::InitSwapchain_(VendorPtr vksurface, Ivec2 fbsize, bool vsync)
 	VkSwapchainKHR sc;
     if (vkCreateSwapchainKHR(device, &swapchain_ci, nullptr, &sc) != VK_SUCCESS)
 	{
-		LogFatal("Unable to create swapchain");
+		WIL_LOGFATAL("Unable to create swapchain");
 	}
 	swapchain_ptr_ = sc;
 
@@ -271,7 +271,7 @@ void Device::InitSwapchain_(VendorPtr vksurface, Ivec2 fbsize, bool vsync)
 
 		VkImageView iv;
         if (vkCreateImageView(device, &view_ci, nullptr, &iv) != VK_SUCCESS)
-			LogFatal("Unable to create image view " + std::to_string(i));
+			WIL_LOGFATAL("Unable to create image view {}", i);
 		image_views_ptr_[i] = iv;
     }
 }
@@ -285,7 +285,7 @@ void Device::InitCommandPool_()
 
 	VkCommandPool pool;
     if (vkCreateCommandPool(static_cast<VkDevice>(device_ptr_), &pool_ci, nullptr, &pool) != VK_SUCCESS)
-		LogFatal("Unable to create command pool");
+		WIL_LOGFATAL("Unable to create command pool");
 	pool_ptr_ = pool;
 }
 
@@ -348,7 +348,7 @@ void Device::InitRenderPass_()
 
 	VkRenderPass rp;
     if (vkCreateRenderPass(device, &render_pass_ci, nullptr, &rp) != VK_SUCCESS)
-		LogFatal("Unable to create render pass");
+		WIL_LOGFATAL("Unable to create render pass");
 	render_pass_ptr_ = rp;
 }
 
@@ -377,7 +377,7 @@ void Device::InitFramebuffers_()
 
 		VkFramebuffer fb;
         if (vkCreateFramebuffer(device, &framebuffer_ci, nullptr, &fb) != VK_SUCCESS)
-			LogFatal("Unable to create framebuffer " + std::to_string(i));
+			WIL_LOGFATAL("Unable to create framebuffer {}", i);
 		framebuffers_ptr_[i] = fb;
     }
 }
@@ -412,7 +412,7 @@ CommandBuffer::CommandBuffer(Device &device) : device_(device)
 
 	VkCommandBuffer cb;
     if (vkAllocateCommandBuffers(static_cast<VkDevice>(device.GetVkDevicePtr_()), &info, &cb) != VK_SUCCESS)
-		LogErr("Unable to create command buffer");
+		WIL_LOGERROR("Unable to create command buffer");
 	buffer_ptr_ = cb;
 }
 
@@ -431,7 +431,7 @@ void CommandBuffer::RecordDraw(uint32_t fb_index, const std::function<void(CmdDr
     begin_i.pInheritanceInfo = nullptr; // Optional
 
     if (vkBeginCommandBuffer(buffer, &begin_i) != VK_SUCCESS)
-		LogErr("Unable to start recording command buffer");
+		WIL_LOGERROR("Unable to start recording command buffer");
 
     VkRenderPassBeginInfo render_pass_i{};
     render_pass_i.sType = VK_STRUCTURE_TYPE_RENDER_PASS_BEGIN_INFO;
@@ -455,7 +455,7 @@ void CommandBuffer::RecordDraw(uint32_t fb_index, const std::function<void(CmdDr
 
     vkCmdEndRenderPass(buffer);
     if (vkEndCommandBuffer(buffer) != VK_SUCCESS)
-		LogErr("Unable to end recording command buffer");
+		WIL_LOGERROR("Unable to end recording command buffer");
 }
 
 void CmdDraw::SetViewport(Fvec2 pos, Fvec2 size, float min_depth, float max_depth)
