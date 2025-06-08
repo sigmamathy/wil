@@ -2,6 +2,7 @@
 
 #include "pipeline.hpp"
 #include "device.hpp"
+#include "cmdbuf.hpp"
 #include <string>
 #include <memory>
 
@@ -35,7 +36,6 @@ struct Vertex3D
 
 struct MVP3D
 {
-	Fmat4 model;
 	Fmat4 view;
 	Fmat4 proj;
 };

@@ -23,6 +23,7 @@ add_library(${PROJECT_NAME}
 	"src/transform.cpp"
 	"src/descriptor.cpp"
 	"src/model.cpp"
+	"src/cmdbuf.cpp"
 )
 
 target_include_directories(${PROJECT_NAME} PUBLIC "include" "deps/stb/include" "deps/tinygltf/include")

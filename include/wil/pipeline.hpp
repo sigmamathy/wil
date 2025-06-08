@@ -51,8 +51,13 @@ struct PipelineCtor
 {
 	Device *device;
 	char const *shaders[2];
+
 	std::vector<VertexAttribLayout> vertex_layout;
 	uint32_t vertex_stride;
+
+	ShaderType push_constant_stage;
+	size_t push_constant_size = 0;
+
 	std::vector<DescriptorSetLayout> descriptor_set_layouts;
 	bool depth_test = true;
 };
@@ -71,6 +76,10 @@ public:
 
 	Device &GetDevice() { return device_; }
 
+	ShaderType GetPushConstantStage() const { return push_constant_stage_; }
+
+	size_t GetPushConstantSize() const { return push_constant_size_; }
+
 	VendorPtr GetVkPipelinePtr_() { return pipeline_ptr_; }
 
 	VendorPtr GetVkPipelineLayoutPtr_() { return layout_ptr_; }
@@ -79,6 +88,9 @@ private:
 
 	Device &device_;
 	VendorPtr pipeline_ptr_, layout_ptr_;
+
+	ShaderType push_constant_stage_;
+	size_t push_constant_size_;
 
 	std::vector<DescriptorSetLayout> descriptor_set_layouts_;
 };

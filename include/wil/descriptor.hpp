@@ -5,25 +5,6 @@
 
 namespace wil {
 
-class DescriptorPool
-{
-public:
-
-	DescriptorPool(Pipeline &pipeline, const std::vector<uint32_t> &max_sets);
-
-	~DescriptorPool();
-
-	std::vector<DescriptorSet> AllocateSets(uint32_t set, uint32_t count);
-
-	void Reset();
-
-private:
-
-	Device &device_;
-	const std::vector<DescriptorSetLayout> &layouts_;
-	VendorPtr pool_ptr_;
-};
-
 class DescriptorSet
 {
 public:
@@ -41,6 +22,25 @@ public:
 private:
 	Device *device_;
 	VendorPtr descriptor_set_ptr_;
+};
+
+class DescriptorPool
+{
+public:
+
+	DescriptorPool(Pipeline &pipeline, const std::vector<uint32_t> &max_sets);
+
+	~DescriptorPool();
+
+	std::vector<DescriptorSet> AllocateSets(uint32_t set, uint32_t count);
+
+	void Reset();
+
+private:
+
+	Device &device_;
+	const std::vector<DescriptorSetLayout> &layouts_;
+	VendorPtr pool_ptr_;
 };
 
 }

@@ -2,9 +2,8 @@
 
 #include "core.hpp"
 #include "device.hpp"
+#include "cmdbuf.hpp"
 #include <vector>
-
-struct VkFence_T;
 
 namespace wil {
 

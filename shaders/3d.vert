@@ -5,15 +5,18 @@ layout(location = 1) in vec2 itex;
 
 layout(location = 0) out vec2 vtex;
 
-layout(set = 0, binding = 0) uniform MVP {
-    mat4 model;
+layout(set = 0, binding = 0) uniform GlobalData {
     mat4 view;
     mat4 proj;
-} umvp;
+} uGlobal;
+
+layout(push_constant) uniform PushConstant {
+    mat4 model;
+} push;
 
 void main()
 {
-	gl_Position = umvp.proj * umvp.view * umvp.model * vec4(ipos, 1.f);
+	gl_Position = uGlobal.proj * uGlobal.view * push.model * vec4(ipos, 1.f);
 	vtex = itex;
 }
 

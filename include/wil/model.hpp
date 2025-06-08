@@ -2,6 +2,7 @@
 
 #include "buffer.hpp"
 #include <memory>
+#include <cstring>
 
 namespace wil {
 

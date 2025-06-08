@@ -176,6 +176,14 @@ Pipeline::Pipeline(const PipelineCtor &ctor) : device_(*ctor.device), descriptor
 		dslptr.push_back(layout);
 	}
 
+	push_constant_stage_ = ctor.push_constant_stage;
+	push_constant_size_ = ctor.push_constant_size;
+
+	VkPushConstantRange pc_range;
+	pc_range.stageFlags = GetVkShaderStageFlag_(ctor.push_constant_stage);
+	pc_range.offset = 0;
+	pc_range.size = ctor.push_constant_size;
+
 	VkPipelineDepthStencilStateCreateInfo depthStencil{};
 	depthStencil.sType = VK_STRUCTURE_TYPE_PIPELINE_DEPTH_STENCIL_STATE_CREATE_INFO;
 	depthStencil.depthTestEnable = ctor.depth_test;
@@ -190,6 +198,8 @@ Pipeline::Pipeline(const PipelineCtor &ctor) : device_(*ctor.device), descriptor
 
 	VkPipelineLayoutCreateInfo pipeline_layout_ci{};
 	pipeline_layout_ci.sType = VK_STRUCTURE_TYPE_PIPELINE_LAYOUT_CREATE_INFO;
+	pipeline_layout_ci.pushConstantRangeCount = ctor.push_constant_size ? 1 : 0;
+	pipeline_layout_ci.pPushConstantRanges = ctor.push_constant_size ? &pc_range : nullptr;
 	pipeline_layout_ci.setLayoutCount = dslptr.size();
 	pipeline_layout_ci.pSetLayouts = dslptr.size() ? dslptr.data() : nullptr;
 

@@ -60,6 +60,8 @@ public:
 			std::memcpy(data, &v, sizeof(wil::Vertex3D));
 		});
 
+		WIL_LOGINFO("mesh: {}, textures: {}", model->GetMeshes().size(), model->GetTextureCount());
+
 		uint32_t fif = wil::App::Instance()->GetFramesInFlight();
 
 		pool = std::make_unique<wil::DescriptorPool>(GetPipeline(),
@@ -87,22 +89,45 @@ public:
 		wil::MVP3D mvp;
 		mvp.proj = wil::Transpose(wil::PerspectiveProjection(2.0944f, 16.f/9, .1f, 100.f));
 		mvp.view = wil::Transpose(wil::LookAtView(Fvec3(0.0f, -1.f, -2.f), Fvec3(0.0f, 0.f, 1.f)));
-		mvp.model = wil::Transpose(
-				wil::RotateModel(glfwGetTime(), wil::Fvec3(0.f, 1.f, 0.f))
-				* wil::ScaleModel(1.f/100 * wil::Fvec3(1.f, -1.f, 1.f))
-		);
 
 		uniforms[frame]->Update(&mvp);
 
-		cb.RecordDraw(index, [this, frame](wil::CmdDraw &cmd)
+		cb.RecordDraw(index, [this, frame, &mvp](wil::CmdDraw &cmd)
 		{
 			cmd.BindPipeline(GetPipeline());
 			auto size = wil::App::Instance()->GetWindow().GetFramebufferSize();
 			cmd.SetViewport({0, 0}, size);
 			cmd.SetScissor({0, 0}, size);
 
-			for (auto &m : model->GetMeshes())
+			wil::Fmat4 mod = wil::Transpose(
+					wil::RotateModel(glfwGetTime(), wil::Fvec3(0.f, 1.f, 0.f))
+					* wil::ScaleModel(1.f/200 * wil::Fvec3(1.f, -1.f, 1.f))
+			);
+
+			cmd.PushConstant(GetPipeline(), &mod);
+
+			for (int i = 0; i < model->GetMeshes().size(); ++i)
 			{
+				const wil::Mesh &m = model->GetMeshes()[i];
+				wil::DescriptorSet sets[] = { uniform_sets[frame], tex_sets[m.material_index] };
+
+				cmd.BindDescriptorSets(GetPipeline(), 0, sets, 2);
+				cmd.BindVertexBuffer(*m.vertex_buffer);
+
+				if (m.index_buffer) {
+					cmd.BindIndexBuffer(*m.index_buffer);
+					cmd.DrawIndexed(m.draw_count, 1);
+				} else {
+					cmd.Draw(m.draw_count, 1);
+				}
+			}
+			
+			mod = mod * wil::Transpose(wil::TranslateModel({1, 0, 0}));
+			cmd.PushConstant(GetPipeline(), &mod);
+
+			for (int i = 0; i < model->GetMeshes().size(); ++i)
+			{
+				const wil::Mesh &m = model->GetMeshes()[i];
 				wil::DescriptorSet sets[] = { uniform_sets[frame], tex_sets[m.material_index] };
 
 				cmd.BindDescriptorSets(GetPipeline(), 0, sets, 2);
