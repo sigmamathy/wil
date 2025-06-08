@@ -77,6 +77,7 @@ ExtractMeshes_(const tinygltf::Model& model, Device &device, size_t vsize, const
 
 			m.vertex_buffer = std::make_unique<VertexBuffer>(device, vsize * vertexCount);
 			m.vertex_buffer->MapData(vertices_data.data());
+			m.draw_count = vertexCount;
 
             if (primitive.indices >= 0) {
                 const auto& indexAccessor = model.accessors[primitive.indices];
@@ -102,6 +103,7 @@ ExtractMeshes_(const tinygltf::Model& model, Device &device, size_t vsize, const
 
 				m.index_buffer = std::make_unique<IndexBuffer>(device, sizeof(uint32_t) * indexCount);
 				m.index_buffer->MapData(indices.data());
+				m.draw_count = indexCount;
             }
         }
     }
