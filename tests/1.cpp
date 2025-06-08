@@ -39,7 +39,9 @@ public:
 	std::unique_ptr<wil::IndexBuffer> ib;
 
 	std::unique_ptr<wil::DescriptorPool> pool;
-	std::vector<wil::DescriptorSet> sets;
+
+	std::vector<wil::DescriptorSet> uniform_sets;
+	std::vector<wil::DescriptorSet> tex_sets;
 
 	std::vector<std::unique_ptr<wil::UniformBuffer>> uniforms;
 	std::unique_ptr<wil::Texture> texture;
@@ -53,23 +55,24 @@ public:
 
 		uint32_t fif = wil::App::Instance()->GetFramesInFlight();
 
-		pool = std::make_unique<wil::DescriptorPool>(GetPipeline(), std::vector{fif});
-		sets = pool->AllocateSets(0, fif);
+		pool = std::make_unique<wil::DescriptorPool>(GetPipeline(), std::vector<uint32_t>{fif, 1});
+		uniform_sets = pool->AllocateSets(0, fif);
+		tex_sets = pool->AllocateSets(1, 1);
 
 		texture = std::make_unique<wil::Texture>(device, "../../tests/texture.jpg");
+		tex_sets[0].BindTexture(0, *texture);
 
 		for (int i = 0; i < fif; ++i) {
 			uniforms.emplace_back(new wil::UniformBuffer(device, sizeof(wil::MVP3D)));
-			sets[i].BindUniform(0, *uniforms[i]);
-			sets[i].BindTexture(1, *texture);
+			uniform_sets[i].BindUniform(0, *uniforms[i]);
 		}
 
-		wil::Model model(device, "../../tests/Duck.glb", sizeof(wil::Vertex3D), [](void *data, Fvec3 pos, Fvec2 texcoord){
-			wil::Vertex3D v;
-			v.pos = pos;
-			v.texcoord = texcoord;
-			std::memcpy(data, &v, sizeof(wil::Vertex3D));
-		});
+		// wil::Model model(device, "../../tests/Duck.glb", sizeof(wil::Vertex3D), [](void *data, Fvec3 pos, Fvec2 texcoord){
+		// 	wil::Vertex3D v;
+		// 	v.pos = pos;
+		// 	v.texcoord = texcoord;
+		// 	std::memcpy(data, &v, sizeof(wil::Vertex3D));
+		// });
 	}
 
 	wil::CommandBuffer &Render(uint32_t frame, uint32_t index) override
@@ -84,9 +87,12 @@ public:
 
 		uniforms[frame]->Update(&mvp);
 
-		cb.RecordDraw(index, [this, frame](wil::CmdDraw &cmd){
+		cb.RecordDraw(index, [this, frame](wil::CmdDraw &cmd)
+		{
 			cmd.BindPipeline(GetPipeline());
-			cmd.BindDescriptorSet(GetPipeline(), sets[frame]);
+			wil::DescriptorSet sets[] = { uniform_sets[frame], tex_sets[0] };
+
+			cmd.BindDescriptorSets(GetPipeline(), 0, sets, 2);
 			cmd.BindVertexBuffer(*vb);
 			cmd.BindIndexBuffer(*ib);
 			auto size = wil::App::Instance()->GetWindow().GetFramebufferSize();

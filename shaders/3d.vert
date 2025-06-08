@@ -5,7 +5,7 @@ layout(location = 1) in vec2 itex;
 
 layout(location = 0) out vec2 vtex;
 
-layout(binding = 0) uniform MVP {
+layout(set = 0, binding = 0) uniform MVP {
     mat4 model;
     mat4 view;
     mat4 proj;

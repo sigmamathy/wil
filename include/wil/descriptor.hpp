@@ -28,6 +28,8 @@ class DescriptorSet
 {
 public:
 
+	DescriptorSet(std::nullptr_t);
+
 	DescriptorSet(Device &device, VendorPtr vkdescriptorset);
 	
 	VendorPtr GetVkDescriptorSetPtr_() { return descriptor_set_ptr_; }
@@ -37,9 +39,8 @@ public:
 	void BindTexture(uint32_t binding, Texture &texture);
 
 private:
-	Device &device_;
+	Device *device_;
 	VendorPtr descriptor_set_ptr_;
 };
-
 
 }

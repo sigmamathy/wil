@@ -73,8 +73,11 @@ void DescriptorPool::Reset()
 	vkResetDescriptorPool(device, static_cast<VkDescriptorPool>(pool_ptr_), 0);
 }
 
+DescriptorSet::DescriptorSet(std::nullptr_t)
+	: device_(nullptr), descriptor_set_ptr_(VK_NULL_HANDLE) {}
+
 DescriptorSet::DescriptorSet(Device &device, VendorPtr vkdescriptorset)
-	: device_(device), descriptor_set_ptr_(vkdescriptorset)
+	: device_(&device), descriptor_set_ptr_(vkdescriptorset)
 {
 }
 	
@@ -94,7 +97,7 @@ void DescriptorSet::BindUniform(uint32_t binding, UniformBuffer &buffer)
     write.descriptorCount = 1;
     write.pBufferInfo = &bi;
 
-    vkUpdateDescriptorSets(static_cast<VkDevice>(device_.GetVkDevicePtr_()), 1, &write, 0, nullptr);
+    vkUpdateDescriptorSets(static_cast<VkDevice>(device_->GetVkDevicePtr_()), 1, &write, 0, nullptr);
 }
 
 void DescriptorSet::BindTexture(uint32_t binding, Texture &texture)
@@ -113,7 +116,7 @@ void DescriptorSet::BindTexture(uint32_t binding, Texture &texture)
     write.descriptorCount = 1;
     write.pImageInfo = &ii;
 
-    vkUpdateDescriptorSets(static_cast<VkDevice>(device_.GetVkDevicePtr_()), 1, &write, 0, nullptr);
+    vkUpdateDescriptorSets(static_cast<VkDevice>(device_->GetVkDevicePtr_()), 1, &write, 0, nullptr);
 }
 
 }

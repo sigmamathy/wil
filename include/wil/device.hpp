@@ -98,7 +98,8 @@ struct CmdDraw
 	void BindPipeline(class Pipeline &pipeline);
 	void BindVertexBuffer(class VertexBuffer &buffer);
 	void BindIndexBuffer(class IndexBuffer &buffer);
-	void BindDescriptorSet(class Pipeline &pipeline, class DescriptorSet &set);
+
+	void BindDescriptorSets(class Pipeline &pipeline, int first_set, class DescriptorSet *sets, size_t count);
 
 	void Draw(uint32_t count, uint32_t instance);
 	void DrawIndexed(uint32_t count, uint32_t instance);
