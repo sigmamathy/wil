@@ -46,7 +46,8 @@ static VkDescriptorType GetVkDescriptorType_(DescriptorType type) {
 	__builtin_unreachable();
 }
 
-static VkShaderStageFlags GetVkShaderStageFlag_(ShaderType type) {
+// also used in cmdbuf.cpp
+VkShaderStageFlags GetVkShaderStageFlag_(ShaderType type) {
 	switch (type) {
 		case VERTEX_SHADER: return VK_SHADER_STAGE_VERTEX_BIT;
 		case FRAGMENT_SHADER: return VK_SHADER_STAGE_FRAGMENT_BIT;

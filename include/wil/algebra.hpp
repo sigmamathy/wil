@@ -6,11 +6,13 @@
 
 namespace wil {
 
-// ematical vectors
+// mathematical vectors
 template<class T, unsigned Dim>
 class Vector
 {
 public:
+
+	static constexpr unsigned dim = Dim;
 
 	// Value uninitialized.
 	constexpr Vector() noexcept = default;
@@ -363,17 +365,21 @@ public:
 
 // -------------------- Tpedefs ---------------------- //
 
-using Ivec2 = Vector<int, 2>;
-using Ivec3 = Vector<int, 3>;
-using Ivec4 = Vector<int, 4>;
+inline namespace algebra {
 
-using Uvec2 = Vector<unsigned, 2>;
-using Uvec3 = Vector<unsigned, 3>;
-using Uvec4 = Vector<unsigned, 4>;
+	using Ivec2 = Vector<int, 2>;
+	using Ivec3 = Vector<int, 3>;
+	using Ivec4 = Vector<int, 4>;
 
-using Fvec2 = Vector<float, 2>;
-using Fvec3 = Vector<float, 3>;
-using Fvec4 = Vector<float, 4>;
+	using Uvec2 = Vector<unsigned, 2>;
+	using Uvec3 = Vector<unsigned, 3>;
+	using Uvec4 = Vector<unsigned, 4>;
+
+	using Fvec2 = Vector<float, 2>;
+	using Fvec3 = Vector<float, 3>;
+	using Fvec4 = Vector<float, 4>;
+
+}
 
 // ------------------------------------ Functions ------------------------------------ //
 
@@ -512,27 +518,44 @@ constexpr auto Normalize(Vector<T, Dim> const& vec)
 	return res;
 }
 
-// ematical matrix
+// mathematical matrix
 template<class T, unsigned Rw, unsigned Cn>
 class Matrix
 {
 public:
+	
+	// By default, Matrix<T,Rw,Cn> uses column major configuration unless
+	// WIL_FORCE_MATRIX_ROW_MAJOR is defined.
+	
+#ifdef WIL_FORCE_MATRIX_ROW_MAJOR
+
+	using VecType = Vector<T, Cn>;
+	static constexpr unsigned vec_dim = Cn;
+	static constexpr unsigned vec_count = Rw;
+
+#else // Column major matrix
+
+	using VecType = Vector<T, Rw>;
+	static constexpr unsigned vec_dim = Rw;
+	static constexpr unsigned vec_count = Cn;
+
+#endif
+
 	// Value uninitialized construction
 	constexpr Matrix() noexcept = default;
 
 	// Identity matrix multiplied by value
-	explicit constexpr Matrix(T value) noexcept
+	explicit constexpr Matrix(T value) noexcept requires (Rw == Cn)
 	{
-		std::fill(rows_.begin(), rows_.end(), Vector<T, Cn>(0));
-		constexpr unsigned max = Rw > Cn ? Rw : Cn;
-		for (unsigned i = 0; i < max; i++)
-			rows_[i][i] = value;
+		std::fill(vecs_.begin(), vecs_.end(), VecType(0));
+		for (unsigned i = 0; i < Rw; i++)
+			vecs_[i][i] = value;
 	}
 
 	// Construct with Rw * Cn number of arguments
-	template<class... Ts> requires (sizeof...(Ts) == Rw)
-	constexpr Matrix(Vector<Ts, Cn> const&... rows) noexcept
-		: rows_ { static_cast<Vector<T, Cn>>(rows)... }
+	template<class... Ts> requires (sizeof...(Ts) == vec_count)
+	constexpr Matrix(Vector<Ts, vec_dim> const&... vecs) noexcept
+		: vecs_ { static_cast<VecType>(vecs)... }
 	{
 	}
 
@@ -540,93 +563,121 @@ public:
 	template<class T2>
 	constexpr Matrix(Matrix<T2, Rw, Cn> const& mat) noexcept
 	{
-		for (unsigned i = 0; i < Rw; i++)
-			rows_[i] = mat.rows_[i];
+		for (unsigned i = 0; i < vec_count; i++)
+			vecs_[i] = mat.vecs_[i];
 	}
 
 	// Access modifiers
-	constexpr Vector<T, Cn>& operator[](unsigned i)
+	constexpr VecType& operator[](unsigned i)
 	{
-		return rows_[i];
+		return vecs_[i];
 	}
 
 	// Constant access
-	constexpr Vector<T, Cn> const& operator[](unsigned i) const
+	constexpr VecType const& operator[](unsigned i) const
 	{
-		return rows_[i];
+		return vecs_[i];
+	}
+
+	// Always return in row configuration no matter the settings
+	constexpr T& operator()(unsigned row, unsigned col)
+	{
+#ifdef WIL_FORCE_MATRIX_ROW_MAJOR
+		return vecs_[row][col];
+#else
+		return vecs_[col][row];
+#endif
+	}
+
+	constexpr T operator()(unsigned row, unsigned col) const
+	{
+#ifdef WIL_FORCE_MATRIX_ROW_MAJOR
+		return vecs_[row][col];
+#else
+		return vecs_[col][row];
+#endif
 	}
 
 	template<class T2>
 	Matrix& operator+=(Matrix<T2, Rw, Cn> const& mat)
 	{
-		for (unsigned i = 0; i < Rw; i++)
-			rows_[i] += mat[i];
+		for (unsigned i = 0; i < vec_count; i++)
+			vecs_[i] += mat[i];
 		return *this;
 	}
 
 	template<class T2>
 	Matrix& operator-=(Matrix<T2, Rw, Cn> const& mat)
 	{
-		for (unsigned i = 0; i < Rw; i++)
-			rows_[i] -= mat[i];
+		for (unsigned i = 0; i < vec_count; i++)
+			vecs_[i] -= mat[i];
 		return *this;
 	}
 
 	Matrix& operator*=(auto scale)
 	{
-		for (unsigned i = 0; i < Rw; i++)
-			rows_[i] *= scale;
+		for (unsigned i = 0; i < vec_count; i++)
+			vecs_[i] *= scale;
 		return *this;
 	}
 
+	constexpr void Fill(auto val)
+	{
+		std::fill(vecs_.begin(), vecs_.end(), VecType(val));
+	}
+
 private:
-	// array of column vectors
-	std::array<Vector<T, Cn>, Rw> rows_;
+	// array of vectors
+	std::array<VecType, Rw> vecs_;
 };
 
 // -------------------- Tpedefs ---------------------- //
 
-using Imat2x2 = Matrix<int, 2, 2>;
-using Imat2x3 = Matrix<int, 2, 3>;
-using Imat2x4 = Matrix<int, 2, 4>;
-using Imat3x2 = Matrix<int, 3, 2>;
-using Imat3x3 = Matrix<int, 3, 3>;
-using Imat3x4 = Matrix<int, 3, 4>;
-using Imat4x2 = Matrix<int, 4, 2>;
-using Imat4x3 = Matrix<int, 4, 3>;
-using Imat4x4 = Matrix<int, 4, 4>;
+inline namespace algebra {
 
-using Umat2x2 = Matrix<unsigned, 2, 2>;
-using Umat2x3 = Matrix<unsigned, 2, 3>;
-using Umat2x4 = Matrix<unsigned, 2, 4>;
-using Umat3x2 = Matrix<unsigned, 3, 2>;
-using Umat3x3 = Matrix<unsigned, 3, 3>;
-using Umat3x4 = Matrix<unsigned, 3, 4>;
-using Umat4x2 = Matrix<unsigned, 4, 2>;
-using Umat4x3 = Matrix<unsigned, 4, 3>;
-using Umat4x4 = Matrix<unsigned, 4, 4>;
+	using Imat2x2 = Matrix<int, 2, 2>;
+	using Imat2x3 = Matrix<int, 2, 3>;
+	using Imat2x4 = Matrix<int, 2, 4>;
+	using Imat3x2 = Matrix<int, 3, 2>;
+	using Imat3x3 = Matrix<int, 3, 3>;
+	using Imat3x4 = Matrix<int, 3, 4>;
+	using Imat4x2 = Matrix<int, 4, 2>;
+	using Imat4x3 = Matrix<int, 4, 3>;
+	using Imat4x4 = Matrix<int, 4, 4>;
 
-using Fmat2x2 = Matrix<float, 2, 2>;
-using Fmat2x3 = Matrix<float, 2, 3>;
-using Fmat2x4 = Matrix<float, 2, 4>;
-using Fmat3x2 = Matrix<float, 3, 2>;
-using Fmat3x3 = Matrix<float, 3, 3>;
-using Fmat3x4 = Matrix<float, 3, 4>;
-using Fmat4x2 = Matrix<float, 4, 2>;
-using Fmat4x3 = Matrix<float, 4, 3>;
-using Fmat4x4 = Matrix<float, 4, 4>;
+	using Umat2x2 = Matrix<unsigned, 2, 2>;
+	using Umat2x3 = Matrix<unsigned, 2, 3>;
+	using Umat2x4 = Matrix<unsigned, 2, 4>;
+	using Umat3x2 = Matrix<unsigned, 3, 2>;
+	using Umat3x3 = Matrix<unsigned, 3, 3>;
+	using Umat3x4 = Matrix<unsigned, 3, 4>;
+	using Umat4x2 = Matrix<unsigned, 4, 2>;
+	using Umat4x3 = Matrix<unsigned, 4, 3>;
+	using Umat4x4 = Matrix<unsigned, 4, 4>;
 
-using Imat2 = Imat2x2;
-using Imat3 = Imat3x3;
-using Imat4 = Imat4x4;
+	using Fmat2x2 = Matrix<float, 2, 2>;
+	using Fmat2x3 = Matrix<float, 2, 3>;
+	using Fmat2x4 = Matrix<float, 2, 4>;
+	using Fmat3x2 = Matrix<float, 3, 2>;
+	using Fmat3x3 = Matrix<float, 3, 3>;
+	using Fmat3x4 = Matrix<float, 3, 4>;
+	using Fmat4x2 = Matrix<float, 4, 2>;
+	using Fmat4x3 = Matrix<float, 4, 3>;
+	using Fmat4x4 = Matrix<float, 4, 4>;
 
-using Umat2 = Umat2x2;
-using Umat3 = Umat3x3;
-using Umat4 = Umat4x4;
+	using Imat2 = Imat2x2;
+	using Imat3 = Imat3x3;
+	using Imat4 = Imat4x4;
 
-using Fmat2 = Fmat2x2;
-using Fmat3 = Fmat3x3;
-using Fmat4 = Fmat4x4;
+	using Umat2 = Umat2x2;
+	using Umat3 = Umat3x3;
+	using Umat4 = Umat4x4;
+
+	using Fmat2 = Fmat2x2;
+	using Fmat3 = Fmat3x3;
+	using Fmat4 = Fmat4x4;
+
+}
 
 // ------------------------------------ Functions ------------------------------------ //
 
@@ -634,7 +685,7 @@ using Fmat4 = Fmat4x4;
 template<class T1, class T2, unsigned Rw, unsigned Cn>
 constexpr auto operator==(Matrix<T1, Rw, Cn> const& mat1, Matrix<T2, Rw, Cn> const& mat2)
 {
-	for (unsigned i = 0; i < Rw; i++)
+	for (unsigned i = 0; i < mat1.vec_count; i++)
 		if (mat1[i] != mat2[i])
 			return false;
 	return true;
@@ -645,7 +696,7 @@ template<class T1, class T2, unsigned Rw, unsigned Cn>
 constexpr auto operator+(Matrix<T1, Rw, Cn> const& mat1, Matrix<T2, Rw, Cn> const& mat2)
 {
 	Matrix<decltype(mat1[0][0] + mat2[0][0]), Rw, Cn> res;
-	for (unsigned i = 0; i < Rw; i++)
+	for (unsigned i = 0; i < mat1.vec_count; i++)
 		res[i] = mat1[i] + mat2[i];
 	return res;
 }
@@ -655,7 +706,7 @@ template<class T1, class T2, unsigned Rw, unsigned Cn>
 constexpr auto operator-(Matrix<T1, Rw, Cn> const& mat1, Matrix<T2, Rw, Cn> const& mat2)
 {
 	Matrix<decltype(mat1[0][0] - mat2[0][0]), Rw, Cn> res;
-	for (unsigned i = 0; i < Rw; i++)
+	for (unsigned i = 0; i < mat1.vec_count; i++)
 		res[i] = mat1[i] - mat2[i];
 	return res;
 }
@@ -665,7 +716,7 @@ template<class T, unsigned Rw, unsigned Cn>
 constexpr auto operator-(Matrix<T, Rw, Cn> const& mat)
 {
 	Matrix<decltype(-mat[0][0]), Rw, Cn> res;
-	for (unsigned i = 0; i < Rw; i++)
+	for (unsigned i = 0; i < mat.vec_count; i++)
 		res[i] = -mat[i];
 	return res;
 }
@@ -675,7 +726,7 @@ template<class T1, class ScT, unsigned Rw, unsigned Cn>
 constexpr auto operator*(Matrix<T1, Rw, Cn> const& mat, ScT scale)
 {
 	Matrix<decltype(mat[0][0] * scale), Rw, Cn> res;
-	for (unsigned i = 0; i < Rw; i++)
+	for (unsigned i = 0; i < mat.vec_count; i++)
 		res[i] = mat * scale;
 	return res;
 }
@@ -692,7 +743,7 @@ template<class T1, class ScT, unsigned Rw, unsigned Cn>
 constexpr auto operator/(Matrix<T1, Rw, Cn> const& mat, ScT scale)
 {
 	Matrix<decltype(mat[0][0] / scale), Rw, Cn> res;
-	for (unsigned i = 0; i < Rw; i++)
+	for (unsigned i = 0; i < mat.vec_count; i++)
 		res[i] = mat[i] / scale;
 	return res;
 }
@@ -702,8 +753,8 @@ template<class T, unsigned Rw, unsigned Cn>
 constexpr auto Transpose(Matrix<T, Rw, Cn> const& mat)
 {
 	Matrix<T, Cn, Rw> res;
-	for (unsigned j = 0; j < Cn; j++)
-		for (unsigned i = 0; i < Rw; i++)
+	for (unsigned j = 0; j < mat.vec_dim; j++)
+		for (unsigned i = 0; i < mat.vec_count; i++)
 			res[j][i] = mat[i][j];
 	return res;
 }
@@ -713,11 +764,36 @@ template<class T1, class T2, unsigned Rw1, unsigned Rw2Cn1, unsigned Cn2>
 constexpr auto operator*(Matrix<T1, Rw1, Rw2Cn1> const& mat1, Matrix<T2, Rw2Cn1, Cn2> const& mat2)
 {
 	Matrix<std::common_type_t<T1, T2>, Rw1, Cn2> res;
-	auto m2t = Transpose(mat2);
-	
-	for (unsigned i = 0; i < Rw1; i++)
-		for (unsigned j = 0; j < Cn2; j++)
-			res[i][j] = Dot(mat1[i], m2t[j]);
+	res.Fill(0);
+
+#ifdef WIL_FORCE_MATRIX_ROW_MAJOR
+
+	for (unsigned i = 0; i < Rw1; ++i)
+	{
+		for (unsigned k = 0; k < Rw2Cn1; ++k)
+		{
+			for (unsigned j = 0; j < Cn2; ++j)
+			{
+				res[i][j] += mat1[i][k] * mat2[k][j];
+			}
+		}
+	}
+
+#else
+
+	for (unsigned j = 0; j < Cn2; ++j)
+	{
+		for (unsigned k = 0; k < Rw2Cn1; ++k)
+		{
+			for (unsigned i = 0; i < Rw1; ++i)
+			{
+				res[j][i] += mat1[k][i] * mat2[j][k];
+			}
+		}
+	}
+
+#endif
+
 	return res;
 }
 
@@ -725,10 +801,21 @@ constexpr auto operator*(Matrix<T1, Rw1, Rw2Cn1> const& mat1, Matrix<T2, Rw2Cn1,
 template<class T1, class T2, unsigned Rw1, unsigned Dim>
 constexpr auto operator*(Matrix<T1, Rw1, Dim> const& mat, Vector<T2, Dim> const& vec)
 {
+#ifdef WIL_FORCE_MATRIX_ROW_MAJOR
+
 	Vector<std::common_type_t<T1, T2>, Rw1> res;
-	for (unsigned j = 0; j < Rw1; j++)
+	for (unsigned j = 0; j < Rw1; ++j)
 		res[j] = Dot(mat[j], vec);
 	return res;
+
+#else
+
+	Vector<std::common_type_t<T1, T2>, Rw1> res(0);
+	for (unsigned j = 0; j < Dim; ++j)
+		res += vec[j] * mat[j];
+	return res;
+
+#endif
 }
 
 }

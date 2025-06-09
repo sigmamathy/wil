@@ -118,10 +118,13 @@ void CmdDraw::BindDescriptorSets(Pipeline &pipeline, int first_set, DescriptorSe
 
 void CmdDraw::PushConstant(Pipeline &pipeline, const void* data)
 {
+	// defined in pipeline.cpp
+	extern VkShaderStageFlags GetVkShaderStageFlag_(ShaderType type);
+
 	vkCmdPushConstants(
 			static_cast<VkCommandBuffer>(buffer_.buffer_ptr_),
 			static_cast<VkPipelineLayout>(pipeline.GetVkPipelineLayoutPtr_()),
-			VK_SHADER_STAGE_VERTEX_BIT,
+			GetVkShaderStageFlag_(pipeline.GetPushConstantStage()),
 			0,
 			pipeline.GetPushConstantSize(),
 			data);

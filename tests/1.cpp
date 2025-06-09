@@ -87,8 +87,8 @@ public:
 		cb.Reset();
 
 		wil::MVP3D mvp;
-		mvp.proj = wil::Transpose(wil::PerspectiveProjection(2.0944f, 16.f/9, .1f, 100.f));
-		mvp.view = wil::Transpose(wil::LookAtView(Fvec3(0.0f, -1.f, -2.f), Fvec3(0.0f, 0.f, 1.f)));
+		mvp.proj = wil::PerspectiveProjection(2.0944f, 16.f/9, .1f, 100.f);
+		mvp.view = wil::LookAtView(Fvec3(0.0f, -1.f, -2.f), Fvec3(0.0f, 0.f, 1.f));
 
 		uniforms[frame]->Update(&mvp);
 
@@ -99,10 +99,9 @@ public:
 			cmd.SetViewport({0, 0}, size);
 			cmd.SetScissor({0, 0}, size);
 
-			wil::Fmat4 mod = wil::Transpose(
+			wil::Fmat4 mod = 
 					wil::RotateModel(glfwGetTime(), wil::Fvec3(0.f, 1.f, 0.f))
-					* wil::ScaleModel(1.f/200 * wil::Fvec3(1.f, -1.f, 1.f))
-			);
+					* wil::ScaleModel(1.f/200 * wil::Fvec3(1.f, -1.f, 1.f));
 
 			cmd.PushConstant(GetPipeline(), &mod);
 
@@ -122,7 +121,7 @@ public:
 				}
 			}
 			
-			mod = mod * wil::Transpose(wil::TranslateModel({1, 0, 0}));
+			mod = wil::TranslateModel({1, 0, 0}) * mod;
 			cmd.PushConstant(GetPipeline(), &mod);
 
 			for (int i = 0; i < model->GetMeshes().size(); ++i)

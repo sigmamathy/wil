@@ -7,3 +7,4 @@ function(create_test TEST_NAME)
 endfunction()
 
 create_test("1")
+create_test("2")
