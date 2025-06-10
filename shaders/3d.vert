@@ -2,6 +2,7 @@
 
 layout(location = 0) in vec3 ipos;
 layout(location = 1) in vec2 itex;
+layout(location = 2) in vec2 inormal;
 
 layout(location = 0) out vec2 vtex;
 

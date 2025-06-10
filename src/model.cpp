@@ -52,11 +52,17 @@ ExtractMeshes_(const tinygltf::Model& model, Device &device, size_t vsize, const
             const auto& posAccessor = model.accessors[primitive.attributes.at("POSITION")];
             const auto& posBufferView = model.bufferViews[posAccessor.bufferView];
             const auto& posBuffer = model.buffers[posBufferView.buffer];
+
+            const auto& normalAccessor = model.accessors[primitive.attributes.at("NORMAL")];
+            const auto& normalBufferView = model.bufferViews[posAccessor.bufferView];
+            const auto& normalBuffer = model.buffers[posBufferView.buffer];
+
             const auto& texAccessor = model.accessors[primitive.attributes.at("TEXCOORD_0")];
             const auto& texBufferView = model.bufferViews[texAccessor.bufferView];
             const auto& texBuffer = model.buffers[texBufferView.buffer];
 
             size_t posOffset = posBufferView.byteOffset + posAccessor.byteOffset;
+			size_t normalOffset = normalBufferView.byteOffset + normalAccessor.byteOffset;
             size_t texOffset = texBufferView.byteOffset + texAccessor.byteOffset;
             size_t vertexCount = posAccessor.count;
 
@@ -67,12 +73,15 @@ ExtractMeshes_(const tinygltf::Model& model, Device &device, size_t vsize, const
 			{
                 const float* posData = reinterpret_cast<const float*>(
 						&posBuffer.data[posOffset + i * posBufferView.byteStride]);
+                const float* normalData = reinterpret_cast<const float*>(
+						&normalBuffer.data[normalOffset + i * normalBufferView.byteStride]);
                 const float* texData = reinterpret_cast<const float*>(
 						&texBuffer.data[texOffset + i * texBufferView.byteStride]);
 
 				Fvec3 pos = {posData[0], posData[1], posData[2]};
+				Fvec3 normal = {normalData[0], normalData[1], normalData[2]};
 				Fvec2 texcoord = {texData[0], texData[1]};
-				handler(vertices_data.data() + i * vsize, pos, texcoord);
+				handler(vertices_data.data() + i * vsize, pos, texcoord, normal);
             }
 
 			m.vertex_buffer = std::make_unique<VertexBuffer>(device, vsize * vertexCount);

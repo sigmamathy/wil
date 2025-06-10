@@ -26,6 +26,7 @@ Layer3D::Layer3D(Device &device) : Layer(device)
 
 	ctor.vertex_layout.push_back(wilvrta(0, Vertex3D, pos));
 	ctor.vertex_layout.push_back(wilvrta(1, Vertex3D, texcoord));
+	ctor.vertex_layout.push_back(wilvrta(2, Vertex3D, normal));
 	ctor.vertex_stride = sizeof(Vertex3D);
 
 	ctor.push_constant_stage = VERTEX_SHADER;

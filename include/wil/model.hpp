@@ -19,7 +19,7 @@ class Model
 {
 public:
 
-	using VertexHandler = std::function<void(void *output, Fvec3 position, Fvec2 texcoord)>;
+	using VertexHandler = std::function<void(void *output, Fvec3 position, Fvec2 texcoord, Fvec3 normal)>;
 
 	Model(Device &device, const std::string &path, size_t vertex_size, const VertexHandler &fn);
 

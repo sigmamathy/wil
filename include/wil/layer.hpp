@@ -32,6 +32,7 @@ struct Vertex3D
 {
 	Fvec3 pos;
 	Fvec2 texcoord;
+	Fvec3 normal;
 };
 
 struct LightVertex3D

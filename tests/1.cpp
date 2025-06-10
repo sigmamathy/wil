@@ -66,10 +66,11 @@ public:
 		light_pool = std::make_unique<wil::DescriptorPool>(GetLightPipeline(), std::vector{fif});
 		light_uniform_sets = light_pool->AllocateSets(0, fif);
 
-		model = std::make_unique<wil::Model>(device, "../../tests/Duck.glb", sizeof(wil::Vertex3D), [](void *data, Fvec3 pos, Fvec2 texcoord){
+		model = std::make_unique<wil::Model>(device, "../../tests/Duck.glb", sizeof(wil::Vertex3D), [](void *data, Fvec3 pos, Fvec2 texcoord, Fvec3 normal){
 			wil::Vertex3D v;
 			v.pos = pos;
 			v.texcoord = texcoord;
+			v.normal = normal;
 			std::memcpy(data, &v, sizeof(wil::Vertex3D));
 		});
 
