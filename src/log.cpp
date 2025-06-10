@@ -51,3 +51,4 @@ void LogVulkan(int severity, const std::string &msg)
 }
 
 }
+

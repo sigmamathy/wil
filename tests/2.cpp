@@ -1,6 +1,7 @@
 #include <wil/algebra.hpp>
 #include <wil/log.hpp>
 
+
 int main()
 {
 	using namespace wil::algebra;
@@ -17,6 +18,5 @@ int main()
 
 	Fmat2 m = m1 * m2;
 
-	WIL_LOGINFO("{} {}", m(0,0), m[1][0]);
-	WIL_LOGINFO("{} {}", m(1,0), m(1,1));
+	WIL_LOGINFO("{}", m1[0]);
 }

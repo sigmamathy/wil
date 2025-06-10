@@ -27,4 +27,30 @@ void LogFormatString(LogSeverity severity, std::format_string<Ts...> fmt, Ts&&..
 
 void LogVulkan(int severity, const std::string &msg);
 
+template<class T, unsigned Dim> class Vector;
+
 }
+
+template<class T>
+struct std::formatter<wil::Vector<T,2>> : std::formatter<std::string> {
+	auto format(wil::Vector<T,2> v, format_context& ctx) const {
+		return formatter<string>::format(
+				std::format("[{}, {}]", v.x, v.y), ctx);
+	}
+};
+
+template<class T>
+struct std::formatter<wil::Vector<T,3>> : std::formatter<std::string> {
+	auto format(wil::Vector<T,3> v, format_context& ctx) const {
+		return formatter<string>::format(
+				std::format("[{}, {}, {}]", v.x, v.y, v.z), ctx);
+	}
+};
+
+template<class T>
+struct std::formatter<wil::Vector<T,4>> : std::formatter<std::string> {
+	auto format(wil::Vector<T,4> v, format_context& ctx) const {
+		return formatter<string>::format(
+				std::format("[{}, {}, {}, {}]", v.x, v.y, v.z, v.w), ctx);
+	}
+};
