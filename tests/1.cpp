@@ -87,7 +87,7 @@ public:
 			tex_sets[i].BindTexture(0, *model->GetTextures()[i]);
 
 		for (int i = 0; i < fif; ++i) {
-			uniforms.emplace_back(new wil::UniformBuffer(device, sizeof(wil::MVP3D)));
+			uniforms.emplace_back(new wil::UniformBuffer(device, sizeof(wil::GlobalData3D)));
 			uniform_sets[i].BindUniform(0, *uniforms[i]);
 			light_uniform_sets[i].BindUniform(0, *uniforms[i]);
 
@@ -102,13 +102,14 @@ public:
 		auto &cb = GetCommandBuffer(frame);
 		cb.Reset();
 
-		wil::MVP3D mvp;
+		wil::GlobalData3D mvp;
 		mvp.proj = wil::PerspectiveProjection(2.0944f, 16.f/9, .1f, 100.f);
-		mvp.view = wil::LookAtView(Fvec3(0.0f, -2.f, -3.f), Fvec3(0.0f, 0.5f, 1.f));
+		mvp.view_pos = Fvec3(0.0f, -2.f, -2.f);
+		mvp.view = wil::LookAtView(mvp.view_pos, Fvec3(0.0f, 0.5f, 1.f));
 
 		uniforms[frame]->Update(&mvp);
 
-		light_pos = Fvec3(4 * std::cos(glfwGetTime()), -1.f, 4 * std::sin(glfwGetTime()));
+		light_pos = Fvec3(2 * std::cos(glfwGetTime()), -1.f, 2 * std::sin(glfwGetTime()));
 
 		light_pos_uniforms[frame]->Update(&light_pos);
 

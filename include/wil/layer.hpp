@@ -46,10 +46,11 @@ struct LightPushConstant3D
 	Fvec4 light_color; 
 };
 
-struct MVP3D
+struct GlobalData3D
 {
-	Fmat4 view;
-	Fmat4 proj;
+	alignas(16) Fmat4 view;
+	alignas(16) Fmat4 proj;
+	alignas(16) Fvec3 view_pos;
 };
 
 class Layer3D : public Layer
