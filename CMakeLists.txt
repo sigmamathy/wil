@@ -33,6 +33,8 @@ target_link_libraries(${PROJECT_NAME} glfw ${Vulkan_LIBRARIES})
 set(SHADER_SOURCES
     "3d.vert"
     "3d.frag"
+	"light3d.vert"
+	"light3d.frag"
 )
 
 if (NOT EXISTS "${CMAKE_BINARY_DIR}/shaders")

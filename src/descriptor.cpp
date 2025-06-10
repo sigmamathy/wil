@@ -17,12 +17,14 @@ DescriptorPool::DescriptorPool(Pipeline &pipeline, const std::vector<uint32_t> &
 		descriptor_count[UNIFORM_BUFFER] += c[UNIFORM_BUFFER] * max_sets[i];
 		descriptor_count[COMBINED_IMAGE_SAMPLER] += c[COMBINED_IMAGE_SAMPLER] * max_sets[i];
 	}
+	const VkDescriptorType types[] = {VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER};
 
-	std::array<VkDescriptorPoolSize, 2> pool_sizes;
-	pool_sizes[0].type = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
-	pool_sizes[0].descriptorCount = descriptor_count[UNIFORM_BUFFER];
-	pool_sizes[1].type = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
-	pool_sizes[1].descriptorCount = descriptor_count[COMBINED_IMAGE_SAMPLER];
+	std::vector<VkDescriptorPoolSize> pool_sizes;
+	for (int i = 0; i < 2; ++i)
+	{
+		if (!descriptor_count[i]) continue;
+		pool_sizes.push_back({types[i], descriptor_count[i]});
+	}
 
 	VkDescriptorPoolCreateInfo pool_i{};
 	pool_i.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_POOL_CREATE_INFO;
@@ -47,8 +49,10 @@ DescriptorPool::~DescriptorPool()
 std::vector<DescriptorSet> DescriptorPool::AllocateSets(uint32_t set, uint32_t count)
 {
 	auto device = static_cast<VkDevice>(device_.GetVkDevicePtr_());
+
 	std::vector<VkDescriptorSetLayout> layouts(count,
 			static_cast<VkDescriptorSetLayout>(layouts_[set].descriptor_set_layout_ptr_));
+
 	VkDescriptorSetAllocateInfo desc_set_ai{};
 	desc_set_ai.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_ALLOCATE_INFO;
 	desc_set_ai.descriptorPool = static_cast<VkDescriptorPool>(pool_ptr_);

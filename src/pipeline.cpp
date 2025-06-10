@@ -10,7 +10,7 @@
 
 namespace wil {
 
-void DescriptorSetLayout::Add(uint32_t binding, DescriptorType type, ShaderType stage)
+void DescriptorSetLayout::Add(uint32_t binding, DescriptorType type, ShaderStageBit stage)
 {
 	bindings_.emplace_back(binding, type, stage);
 	++descriptor_count_[type];
@@ -38,29 +38,31 @@ static VkShaderModule CreateShaderModule_(VkDevice device, char const* path)
     return module;
 }
 
-static VkDescriptorType GetVkDescriptorType_(DescriptorType type) {
+static VkDescriptorType GetVkDescriptorType_(DescriptorType type)
+{
 	switch (type) {
-		case UNIFORM_BUFFER: return VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
-		case COMBINED_IMAGE_SAMPLER: return VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
+		case UNIFORM_BUFFER:			return VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
+		// case UNIFORM_BUFFER_DYNAMIC:	return VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER_DYNAMIC;
+		case COMBINED_IMAGE_SAMPLER:	return VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
 	}
 	__builtin_unreachable();
 }
 
 // also used in cmdbuf.cpp
-VkShaderStageFlags GetVkShaderStageFlag_(ShaderType type) {
-	switch (type) {
-		case VERTEX_SHADER: return VK_SHADER_STAGE_VERTEX_BIT;
-		case FRAGMENT_SHADER: return VK_SHADER_STAGE_FRAGMENT_BIT;
-	}
-	__builtin_unreachable();
+VkShaderStageFlags GetVkShaderStageFlag_(ShaderStageBit bit) 
+{
+	VkShaderStageFlags flags = 0;
+	if (bit & VERTEX_SHADER) flags |= VK_SHADER_STAGE_VERTEX_BIT;
+	if (bit & FRAGMENT_SHADER) flags |= VK_SHADER_STAGE_FRAGMENT_BIT;
+	return flags;
 }
 
 Pipeline::Pipeline(const PipelineCtor &ctor) : device_(*ctor.device), descriptor_set_layouts_(ctor.descriptor_set_layouts)
 {
 	VkDevice device = static_cast<VkDevice>(ctor.device->GetVkDevicePtr_());
 
-	VkShaderModule vert = CreateShaderModule_(device, ctor.shaders[VERTEX_SHADER]);
-	VkShaderModule frag = CreateShaderModule_(device, ctor.shaders[FRAGMENT_SHADER]);
+	VkShaderModule vert = CreateShaderModule_(device, ctor.vertex_shader);
+	VkShaderModule frag = CreateShaderModule_(device, ctor.fragment_shader);
 
 	VkPipelineShaderStageCreateInfo shader_stages_ci[] = { {}, {} };
 

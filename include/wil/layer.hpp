@@ -34,6 +34,17 @@ struct Vertex3D
 	Fvec2 texcoord;
 };
 
+struct LightVertex3D
+{
+	Fvec3 pos;
+};
+
+struct LightPushConstant3D
+{
+	Fmat4 model;
+	Fvec4 light_color; 
+};
+
 struct MVP3D
 {
 	Fmat4 view;
@@ -50,8 +61,10 @@ public:
 
 	Pipeline &GetPipeline() { return *pipeline_; }
 
+	Pipeline &GetLightPipeline() { return *light_pipeline_; }
+
 private:
-	std::unique_ptr<Pipeline> pipeline_;
+	std::unique_ptr<Pipeline> pipeline_, light_pipeline_;
 };
 
 }

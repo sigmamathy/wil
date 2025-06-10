@@ -20,8 +20,10 @@ Layer3D::Layer3D(Device &device) : Layer(device)
 {
 	PipelineCtor ctor;
 	ctor.device = &device;
-	ctor.shaders[VERTEX_SHADER] = "../shaders/3d.vert.spv";
-	ctor.shaders[FRAGMENT_SHADER] = "../shaders/3d.frag.spv";
+
+	ctor.vertex_shader = "../shaders/3d.vert.spv";
+	ctor.fragment_shader = "../shaders/3d.frag.spv";
+
 	ctor.vertex_layout.push_back(wilvrta(0, Vertex3D, pos));
 	ctor.vertex_layout.push_back(wilvrta(1, Vertex3D, texcoord));
 	ctor.vertex_stride = sizeof(Vertex3D);
@@ -35,6 +37,22 @@ Layer3D::Layer3D(Device &device) : Layer(device)
 
 	pipeline_ = std::make_unique<Pipeline>(ctor);
 	
+	PipelineCtor lct;
+	lct.device = &device;
+
+	lct.vertex_shader = "../shaders/light3d.vert.spv";
+	lct.fragment_shader = "../shaders/light3d.frag.spv";
+
+	lct.vertex_layout.push_back(wilvrta(0, LightVertex3D, pos));
+	lct.vertex_stride = sizeof(LightVertex3D);
+
+	lct.push_constant_stage = VERTEX_SHADER | FRAGMENT_SHADER;
+	lct.push_constant_size = sizeof(LightPushConstant3D);
+
+	lct.descriptor_set_layouts.resize(1);
+	lct.descriptor_set_layouts[0].Add(0, UNIFORM_BUFFER, VERTEX_SHADER);
+
+	light_pipeline_ = std::make_unique<Pipeline>(lct);
 }
 
 Layer3D::~Layer3D()

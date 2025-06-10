@@ -7,11 +7,13 @@
 
 namespace wil {
 
-enum ShaderType
+enum ShaderStageBit
 {
-	VERTEX_SHADER,
-	FRAGMENT_SHADER,
+	VERTEX_SHADER		= 1,
+	FRAGMENT_SHADER		= 2,
 };
+
+WIL_ENUM_DEFINE_OR_OPERATOR(ShaderStageBit);
 
 struct VertexAttribLayout
 {
@@ -29,7 +31,8 @@ uint32_t getvkattribformat_();
 enum DescriptorType
 {
 	UNIFORM_BUFFER,
-	COMBINED_IMAGE_SAMPLER
+	// UNIFORM_BUFFER_DYNAMIC,
+	COMBINED_IMAGE_SAMPLER,
 };
 
 struct DescriptorSetLayout
@@ -37,10 +40,10 @@ struct DescriptorSetLayout
 	struct Binding {
 		uint32_t binding;
 		DescriptorType type;
-		ShaderType stage;
+		ShaderStageBit stage;
 	};
 
-	void Add(uint32_t binding, DescriptorType type, ShaderType stage);
+	void Add(uint32_t binding, DescriptorType type, ShaderStageBit stage);
 
 	std::vector<Binding> bindings_;
 	std::array<uint32_t, 2> descriptor_count_ = {0, 0};
@@ -50,12 +53,13 @@ struct DescriptorSetLayout
 struct PipelineCtor
 {
 	Device *device;
-	char const *shaders[2];
+	char const *vertex_shader;
+	char const *fragment_shader;
 
 	std::vector<VertexAttribLayout> vertex_layout;
 	uint32_t vertex_stride;
 
-	ShaderType push_constant_stage;
+	ShaderStageBit push_constant_stage;
 	size_t push_constant_size = 0;
 
 	std::vector<DescriptorSetLayout> descriptor_set_layouts;
@@ -76,7 +80,7 @@ public:
 
 	Device &GetDevice() { return device_; }
 
-	ShaderType GetPushConstantStage() const { return push_constant_stage_; }
+	ShaderStageBit GetPushConstantStage() const { return push_constant_stage_; }
 
 	size_t GetPushConstantSize() const { return push_constant_size_; }
 
@@ -89,7 +93,7 @@ private:
 	Device &device_;
 	VendorPtr pipeline_ptr_, layout_ptr_;
 
-	ShaderType push_constant_stage_;
+	ShaderStageBit push_constant_stage_;
 	size_t push_constant_size_;
 
 	std::vector<DescriptorSetLayout> descriptor_set_layouts_;
