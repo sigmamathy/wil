@@ -46,6 +46,11 @@ struct LightPushConstant3D
 	Fvec4 light_color; 
 };
 
+struct LightUniform {
+	alignas(16) Fvec3 pos;
+	alignas(16) Fvec3 color;
+};
+
 struct GlobalData3D
 {
 	alignas(16) Fmat4 view;

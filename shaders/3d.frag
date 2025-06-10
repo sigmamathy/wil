@@ -14,6 +14,7 @@ layout(set = 0, binding = 0) uniform GlobalData {
 
 layout(set = 0, binding = 1) uniform Light {
 	vec3 pos;
+	vec3 color;
 } uLight;
 
 layout(set = 1, binding = 0) uniform sampler2D uTexSampler;
@@ -26,14 +27,14 @@ void main()
 	vec3 norm = normalize(vNormal);
 	vec3 lightDir = normalize(uLight.pos - vFragPos);  
 
-	vec3 diffuse = max(dot(norm, lightDir), 0.0) * vec3(1.f,1.f,1.f);
-	vec3 ambient = ambient_strength * vec3(1.f, 1.f, 1.f);
+	vec3 diffuse = max(dot(norm, lightDir), 0.0) * uLight.color;
+	vec3 ambient = ambient_strength * uLight.color;
 
 	vec3 viewDir = normalize(uGlobal.viewPos - vFragPos);
 	vec3 reflectDir = reflect(-lightDir, norm);
 
 	float spec = pow(max(dot(viewDir, reflectDir), 0.0), 32);
-	vec3 specular = specular_strength * spec * vec3(1.f, 1.f, 1.f);  
+	vec3 specular = specular_strength * spec * uLight.color;  
 
 	oFragColor = vec4(diffuse + ambient + specular, 1.f) * texture(uTexSampler, vTexCoord);
 }

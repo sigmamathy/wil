@@ -54,8 +54,6 @@ public:
 	std::vector<std::unique_ptr<wil::UniformBuffer>> uniforms;
 	std::vector<std::unique_ptr<wil::UniformBuffer>> light_pos_uniforms;
 
-	Fvec3 light_pos;
-
 	MyLayer(wil::Device &device) : wil::Layer3D(device)
 	{
 		uint32_t fif = wil::App::Instance()->GetFramesInFlight();
@@ -91,7 +89,7 @@ public:
 			uniform_sets[i].BindUniform(0, *uniforms[i]);
 			light_uniform_sets[i].BindUniform(0, *uniforms[i]);
 
-			light_pos_uniforms.emplace_back(new wil::UniformBuffer(device, sizeof(Fvec3)));
+			light_pos_uniforms.emplace_back(new wil::UniformBuffer(device, sizeof(wil::LightUniform)));
 			uniform_sets[i].BindUniform(1, *light_pos_uniforms[i]);
 		}
 
@@ -109,11 +107,13 @@ public:
 
 		uniforms[frame]->Update(&mvp);
 
-		light_pos = Fvec3(2 * std::cos(glfwGetTime()), -1.f, 2 * std::sin(glfwGetTime()));
+		wil::LightUniform light;
+		light.pos = Fvec3(2 * std::cos(glfwGetTime()), -1.f, 2 * std::sin(glfwGetTime()));
+		light.color = Fvec3(1.f, (std::sin(glfwGetTime() * 0.7f) + 0.5f) / 2, 0.7f);
 
-		light_pos_uniforms[frame]->Update(&light_pos);
+		light_pos_uniforms[frame]->Update(&light);
 
-		cb.RecordDraw(index, [this, frame, &mvp](wil::CmdDraw &cmd)
+		cb.RecordDraw(index, [this, frame, &mvp, &light](wil::CmdDraw &cmd)
 		{
 			cmd.BindPipeline(GetPipeline());
 			auto size = wil::App::Instance()->GetWindow().GetFramebufferSize();
@@ -145,8 +145,8 @@ public:
 			cmd.BindPipeline(GetLightPipeline());
 			cmd.BindDescriptorSets(GetLightPipeline(), 0, &light_uniform_sets[frame], 1);
 			wil::LightPushConstant3D push;
-			push.model = wil::TranslateModel(light_pos);
-			push.light_color = {1.f, 1.f, 1.f, 1.f};
+			push.model = wil::TranslateModel(light.pos);
+			push.light_color = light.color & 1.f;
 
 			cmd.PushConstant(GetLightPipeline(), &push);
 			cmd.BindVertexBuffer(*vb);
