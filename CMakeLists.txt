@@ -10,6 +10,7 @@ find_package(Vulkan REQUIRED)
 add_library(${PROJECT_NAME}
 	"deps/stb/src/stb_image.c"
 	"deps/stb/src/stb_image_write.c"
+	"deps/stb/src/stb_truetype.c"
 	"deps/tinygltf/src/tiny_gltf.cc"
 	"src/app.cpp"
 	"src/log.cpp"
@@ -44,9 +45,13 @@ endif()
 # Compile all shaders using glslc upon each build
 set(SHADER_TARGET_INDEX 0)
 foreach(SHADER ${SHADER_SOURCES})
-    add_custom_target("shader_build_${SHADER_TARGET_INDEX}"
-            COMMAND glslc "${PROJECT_SOURCE_DIR}/shaders/${SHADER}" -o "${CMAKE_BINARY_DIR}/shaders/${SHADER}.spv"
-            COMMENT "Compile shader module ${SHADER}"
+	add_custom_command(OUTPUT "${CMAKE_BINARY_DIR}/shaders/${SHADER}.spv"
+        COMMAND glslc "${PROJECT_SOURCE_DIR}/shaders/${SHADER}" -o "${CMAKE_BINARY_DIR}/shaders/${SHADER}.spv"
+		DEPENDS "${PROJECT_SOURCE_DIR}/shaders/${SHADER}"
+        COMMENT "Compile shader module ${SHADER}"
+	)
+	add_custom_target("shader_build_${SHADER_TARGET_INDEX}" ALL
+		DEPENDS "${CMAKE_BINARY_DIR}/shaders/${SHADER}.spv"
     )
     add_dependencies(${PROJECT_NAME} "shader_build_${SHADER_TARGET_INDEX}")
     math(EXPR SHADER_TARGET_INDEX "${SHADER_TARGET_INDEX} + 1")
