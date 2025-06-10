@@ -1,10 +1,12 @@
 #version 450
 
-layout(location = 0) in vec3 ipos;
-layout(location = 1) in vec2 itex;
-layout(location = 2) in vec2 inormal;
+layout(location = 0) in vec3 iPos;
+layout(location = 1) in vec2 iTexCoord;
+layout(location = 2) in vec3 iNormal;
 
-layout(location = 0) out vec2 vtex;
+layout(location = 0) out vec2 vTexCoord;
+layout(location = 1) out vec3 vFragPos;  
+layout(location = 2) out vec3 vNormal;
 
 layout(set = 0, binding = 0) uniform GlobalData {
     mat4 view;
@@ -17,7 +19,9 @@ layout(push_constant) uniform PushConstant {
 
 void main()
 {
-	gl_Position = uGlobal.proj * uGlobal.view * push.model * vec4(ipos, 1.f);
-	vtex = itex;
+	gl_Position = uGlobal.proj * uGlobal.view * push.model * vec4(iPos, 1.f);
+	vTexCoord = iTexCoord;
+	vFragPos = vec3(push.model * vec4(iPos, 1.f));
+	vNormal = mat3(transpose(inverse(push.model))) * iNormal;
 }
 

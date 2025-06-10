@@ -52,7 +52,9 @@ public:
 	std::vector<wil::DescriptorSet> tex_sets;
 
 	std::vector<std::unique_ptr<wil::UniformBuffer>> uniforms;
-	// std::unique_ptr<wil::Texture> texture;
+	std::vector<std::unique_ptr<wil::UniformBuffer>> light_pos_uniforms;
+
+	Fvec3 light_pos;
 
 	MyLayer(wil::Device &device) : wil::Layer3D(device)
 	{
@@ -88,6 +90,9 @@ public:
 			uniforms.emplace_back(new wil::UniformBuffer(device, sizeof(wil::MVP3D)));
 			uniform_sets[i].BindUniform(0, *uniforms[i]);
 			light_uniform_sets[i].BindUniform(0, *uniforms[i]);
+
+			light_pos_uniforms.emplace_back(new wil::UniformBuffer(device, sizeof(Fvec3)));
+			uniform_sets[i].BindUniform(1, *light_pos_uniforms[i]);
 		}
 
 	}
@@ -99,9 +104,13 @@ public:
 
 		wil::MVP3D mvp;
 		mvp.proj = wil::PerspectiveProjection(2.0944f, 16.f/9, .1f, 100.f);
-		mvp.view = wil::LookAtView(Fvec3(0.0f, -1.f, -2.f), Fvec3(0.0f, 0.f, 1.f));
+		mvp.view = wil::LookAtView(Fvec3(0.0f, -2.f, -3.f), Fvec3(0.0f, 0.5f, 1.f));
 
 		uniforms[frame]->Update(&mvp);
+
+		light_pos = Fvec3(4 * std::cos(glfwGetTime()), -1.f, 4 * std::sin(glfwGetTime()));
+
+		light_pos_uniforms[frame]->Update(&light_pos);
 
 		cb.RecordDraw(index, [this, frame, &mvp](wil::CmdDraw &cmd)
 		{
@@ -111,7 +120,7 @@ public:
 			cmd.SetScissor({0, 0}, size);
 
 			wil::Fmat4 mod = 
-					wil::RotateModel(glfwGetTime(), wil::Fvec3(0.f, 1.f, 0.f))
+					wil::RotateModel(glfwGetTime() * 2, wil::Fvec3(0.f, 1.f, 0.f))
 					* wil::ScaleModel(1.f/120 * wil::Fvec3(1.f, -1.f, 1.f));
 
 			cmd.PushConstant(GetPipeline(), &mod);
@@ -135,8 +144,7 @@ public:
 			cmd.BindPipeline(GetLightPipeline());
 			cmd.BindDescriptorSets(GetLightPipeline(), 0, &light_uniform_sets[frame], 1);
 			wil::LightPushConstant3D push;
-			push.model = wil::RotateModel(-glfwGetTime(), Fvec3(0.f, 1.f, 0.f))
-				* wil::TranslateModel({4.f,-1.f,0});
+			push.model = wil::TranslateModel(light_pos);
 			push.light_color = {1.f, 1.f, 1.f, 1.f};
 
 			cmd.PushConstant(GetLightPipeline(), &push);

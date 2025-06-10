@@ -34,6 +34,7 @@ Layer3D::Layer3D(Device &device) : Layer(device)
 
 	ctor.descriptor_set_layouts.resize(2);
 	ctor.descriptor_set_layouts[0].Add(0, UNIFORM_BUFFER, VERTEX_SHADER);
+	ctor.descriptor_set_layouts[0].Add(1, UNIFORM_BUFFER, FRAGMENT_SHADER);
 	ctor.descriptor_set_layouts[1].Add(0, COMBINED_IMAGE_SAMPLER, FRAGMENT_SHADER);
 
 	pipeline_ = std::make_unique<Pipeline>(ctor);
