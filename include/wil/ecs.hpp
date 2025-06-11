@@ -97,7 +97,7 @@ class Registry
 {
 public:
 
-	Registry(size_t entities_reserve = 1000)
+	Registry(size_t entities_reserve = 1000) : entities_count(0)
 	{
 		signatures_.reserve(entities_reserve);
 	}
