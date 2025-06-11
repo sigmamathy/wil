@@ -10,62 +10,11 @@
 
 namespace wil {
 
-constexpr size_t MAX_COMPONENTS = 32;
+constexpr size_t MAX_COMPONENTS = 64;
 
 using Entity		= uint32_t;
 using ComponentType = uint8_t;
 using Signature		= std::bitset<MAX_COMPONENTS>;
-
-class EntityManager
-{
-public:
-
-	EntityManager(size_t reserve_entities) : entities_count(0)
-	{
-		signatures_.reserve(reserve_entities);
-	}
-
-	Entity CreateEntity()
-	{
-		++entities_count;
-
-		if (refill_entities_.empty())
-		{
-			Entity e = signatures_.size();
-			signatures_.push_back(0);
-			return e;
-		}
-		else
-		{
-			Entity e = refill_entities_.back();
-			refill_entities_.pop_back();
-			return e;
-		}
-	}
-
-	void DestroyEntity(Entity entity)
-	{
-		signatures_[entity].reset();
-		refill_entities_.push_back(entity);
-		--entities_count;
-	}
-
-	void SetSignature(Entity entity, Signature signature)
-	{
-		signatures_[entity] = signature;
-	}
-
-	Signature GetSignature(Entity entity) const
-	{
-		return signatures_[entity];
-	}
-
-private:
-
-	std::vector<Signature> signatures_;
-	std::vector<Entity> refill_entities_;
-	size_t entities_count;
-};
 
 class BaseComponentArray
 {
@@ -90,10 +39,10 @@ public:
 
 	ComponentArray(ComponentType type) : BaseComponentArray(type) {};
 
-	void InsertData(Entity entity, T component)
+	void InsertData(Entity entity, T&& component)
 	{
 		entity_to_index_[entity] = components_.size();
-		components_.emplace_back(component);
+		components_.emplace_back(std::forward<T>(component));
 		index_to_entity.emplace_back(entity);
 	}
 
@@ -129,33 +78,108 @@ private:
 	std::vector<Entity> index_to_entity;
 };
 
-class ComponentManager
+struct EntityView
+{
+	Signature pass;
+	std::set<Entity> set;
+};
+
+class System
 {
 public:
 
+	System(class Registry &registry) {}
+
+	virtual ~System() = default;
+};
+
+class Registry
+{
+public:
+
+	Registry(size_t entities_reserve = 1000)
+	{
+		signatures_.reserve(entities_reserve);
+	}
+
+	// Entity methods
+	Entity CreateEntity()
+	{
+		++entities_count;
+
+		if (refill_entities_.empty())
+		{
+			Entity e = signatures_.size();
+			signatures_.push_back(0);
+			return e;
+		}
+		else
+		{
+			Entity e = refill_entities_.back();
+			refill_entities_.pop_back();
+			return e;
+		}
+	}
+
+	void DestroyEntity(Entity entity)
+	{
+		signatures_[entity].reset();
+		refill_entities_.push_back(entity);
+		--entities_count;
+
+		for (auto const& [_, component] : component_arrays_)
+			component->EntityDestroyed(entity);
+
+		for (auto const& view : entity_views_)
+			view->set.erase(entity);
+	}
+
+
+	// Component methods
 	template<typename T>
 	void RegisterComponent()
 	{
-		component_arrays_[std::type_index(typeid(T))]
-			= std::make_unique<ComponentArray<T>>(component_arrays_.size());
+		auto i = std::type_index(typeid(T));
+		if (!component_arrays_.count(i))
+			component_arrays_[i]
+				= std::make_unique<ComponentArray<T>>(component_arrays_.size());
 	}
 
-	template<typename T>
-	ComponentType GetComponentType() const
+	template<class... Ts>
+	void AddComponents(Entity entity, Ts&&... components)
 	{
-		return component_arrays_.at(std::type_index(typeid(T)))->GetType();
+		(RegisterComponent<Ts>(), ...);
+		(GetComponentArray<Ts>().InsertData(entity, std::forward<Ts>(components)), ...);
+
+		auto signature = signatures_[entity];
+		(signature.set(GetComponentType<Ts>(), true), ...);
+		signatures_[entity] = signature;
+
+		for (auto view : entity_views_)
+		{
+			if ((signature & view->pass) == view->pass)
+				view->set.insert(entity);
+			else
+				view->set.erase(entity);
+		}
 	}
 
-	template<typename T>
-	void AddComponent(Entity entity, T component)
+	template<class... Ts>
+	void RemoveComponents(Entity entity)
 	{
-		GetComponentArray<T>().InsertData(entity, component);
-	}
+		(GetComponentArray<Ts>().RemoveData(entity), ...);
 
-	template<typename T>
-	void RemoveComponent(Entity entity)
-	{
-		GetComponentArray<T>().RemoveData(entity);
+		auto signature = signatures_[entity];
+		(signature.set(GetComponentType<Ts>(), false), ...);
+		signatures_[entity] = signature;
+
+		for (auto view : entity_views_)
+		{
+			if ((signature & view->pass) == view->pass)
+				view->set.insert(entity);
+			else
+				view->set.erase(entity);
+		}
 	}
 
 	template<typename T>
@@ -164,10 +188,44 @@ public:
 		return GetComponentArray<T>().GetData(entity);
 	}
 
-	void EntityDestroyed(Entity entity)
+	template<class... Ts>
+	std::tuple<Ts&...> GetComponents(Entity entity)
 	{
-		for (auto const& [_, component] : component_arrays_)
-			component->EntityDestroyed(entity);
+		return std::tie<Ts&...>(GetComponent<Ts>(entity)...);
+	}
+
+	template<class... Ts>
+	bool HasComponents(Entity entity)
+	{
+		return (signatures_[entity].test(GetComponentType<Ts>()) && ...);
+	}
+
+	template<typename T>
+	ComponentType GetComponentType() const
+	{
+		return component_arrays_.at(std::type_index(typeid(T)))->GetType();
+	}
+
+	template<class... Ts>
+	void RegisterEntityView(EntityView &view)
+	{
+		(RegisterComponent<Ts>(), ...);
+		(view.pass.set(GetComponentType<Ts>(), true), ...);
+		entity_views_.emplace_back(&view);
+	}
+
+	template<typename T>
+	T &RegisterSystem()
+	{
+		auto i = std::type_index(typeid(T));
+		systems_[i] = std::make_unique<T>(*this);
+		return *static_cast<T*>(systems_.at(i).get());
+	}
+
+	template<class T>
+	T &GetSystem()
+	{
+		return systems_.at(std::type_index(typeid(T)));
 	}
 
 private:
@@ -179,151 +237,17 @@ private:
 				component_arrays_.at(std::type_index(typeid(T))).get());
 	}
 
+	// Entity manager
+	std::vector<Signature> signatures_;
+	std::vector<Entity> refill_entities_;
+	size_t entities_count;
+
+	// Component manager
 	std::unordered_map<std::type_index, std::unique_ptr<BaseComponentArray>> component_arrays_{};
-};
 
-class System
-{
-public:
-
-	System(ComponentManager &cm) : cm_(cm) {}
-
-	virtual ~System() = default;
-
-	virtual Signature GetSignature() const = 0;
-
-	std::set<Entity> &GetEntities() { return entities_; }
-
-protected:
-
-	template<class... Ts>
-	Signature MakeSignature() const {
-		Signature result;
-		(result.set(cm_.GetComponentType<Ts>(), true), ...);
-		return result;
-	}
-
-private:
-
-	ComponentManager &cm_;
-	std::set<Entity> entities_;
-};
-
-class SystemManager
-{
-public:
-
-	template<typename T>
-	T &RegisterSystem(ComponentManager &cm)
-	{
-		auto i = std::type_index(typeid(T));
-		systems_[i] = std::make_unique<T>(cm);
-		return *static_cast<T*>(systems_.at(i).get());
-	}
-
-	void EntityDestroyed(Entity entity)
-	{
-		for (auto const& [_, sys] : systems_)
-			sys->GetEntities().erase(entity);
-	}
-
-	void EntitySignatureChanged(Entity entity, Signature entitySignature)
-	{
-		for (auto const& [_, sys] : systems_)
-		{
-			if ((entitySignature & sys->GetSignature()) == sys->GetSignature())
-				sys->GetEntities().insert(entity);
-			else
-				sys->GetEntities().erase(entity);
-		}
-	}
-
-private:
-
+	// System manager
 	std::unordered_map<std::type_index, std::unique_ptr<System>> systems_{};
-};
-
-class Registry
-{
-public:
-
-	Registry(size_t entities_reserve = 1000)
-	{
-		entity_manager_ = std::make_unique<EntityManager>(entities_reserve);
-		component_manager_ = std::make_unique<ComponentManager>();
-		system_manager_ = std::make_unique<SystemManager>();
-	}
-
-	// Entity methods
-	Entity CreateEntity()
-	{
-		return entity_manager_->CreateEntity();
-	}
-
-	void DestroyEntity(Entity entity)
-	{
-		entity_manager_->DestroyEntity(entity);
-
-		component_manager_->EntityDestroyed(entity);
-
-		system_manager_->EntityDestroyed(entity);
-	}
-
-
-	// Component methods
-	template<typename T>
-	void RegisterComponent()
-	{
-		component_manager_->RegisterComponent<T>();
-	}
-
-	template<typename T>
-	void AddComponent(Entity entity, T component)
-	{
-		component_manager_->AddComponent<T>(entity, component);
-
-		auto signature = entity_manager_->GetSignature(entity);
-		signature.set(component_manager_->GetComponentType<T>(), true);
-		entity_manager_->SetSignature(entity, signature);
-
-		system_manager_->EntitySignatureChanged(entity, signature);
-	}
-
-	template<typename T>
-	void RemoveComponent(Entity entity)
-	{
-		component_manager_->RemoveComponent<T>(entity);
-
-		auto signature = entity_manager_->GetSignature(entity);
-		signature.set(component_manager_->GetComponentType<T>(), false);
-		entity_manager_->SetSignature(entity, signature);
-
-		system_manager_->EntitySignatureChanged(entity, signature);
-	}
-
-	template<typename T>
-	T& GetComponent(Entity entity)
-	{
-		return component_manager_->GetComponent<T>(entity);
-	}
-
-	template<typename T>
-	ComponentType GetComponentType()
-	{
-		return component_manager_->GetComponentType<T>();
-	}
-
-	template<typename T>
-	T &RegisterSystem()
-	{
-		return system_manager_->RegisterSystem<T>(*component_manager_);
-	}
-
-private:
-
-	std::unique_ptr<ComponentManager> component_manager_;
-	std::unique_ptr<EntityManager> entity_manager_;
-	std::unique_ptr<SystemManager> system_manager_;
+	std::vector<EntityView*> entity_views_;
 };
 
 }

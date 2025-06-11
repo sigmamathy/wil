@@ -8,38 +8,44 @@ struct Test {
 	float val;
 };
 
-Registry registry;
+struct Test2 {
+	Ivec2 wow;
+};
+
 
 class TestSystem : public System
 {
 public:
 
-	TestSystem(ComponentManager &cm) : System(cm) {}
+	EntityView view;
 
-	void process() {
-		for (Entity e : GetEntities()) {
-			Test test = registry.GetComponent<Test>(e);
-			test.val *= 2.f;
-			WIL_LOGINFO("{}", test.val);
-		}
+	TestSystem(Registry &registry) : System(registry) {
+		registry.RegisterEntityView<Test, Test2>(view);
 	}
 
-	Signature GetSignature() const override {
-		return MakeSignature<Test>();
+	void process(Registry &registry)
+	{
+		for (Entity e : view.set)
+		{
+			auto [t, t2] = registry.GetComponents<Test, Test2>(e);
+			t.val *= 2.f;
+			WIL_LOGINFO("{}", t.val + t2.wow.Norm());
+		}
 	}
 };
 
 int main()
 {
-	registry.RegisterComponent<Test>();
+	Registry registry;
 	auto &s = registry.RegisterSystem<TestSystem>();
 
 	Entity e = registry.CreateEntity();
-	registry.AddComponent(e, Test{1.0f});
+	registry.AddComponents(e, Test{1.0f}, Test2{Ivec2{4, 3}});
 
-	s.process();
+	s.process(registry);
+	s.process(registry);
 
-	registry.RemoveComponent<Test>(e);
+	registry.RemoveComponents<Test>(e);
 
-	s.process();
+	s.process(registry);
 }
