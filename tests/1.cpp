@@ -56,7 +56,7 @@ public:
 
 	MyLayer(wil::Device &device) : wil::Layer3D(device)
 	{
-		uint32_t fif = wil::App::Instance()->GetFramesInFlight();
+		uint32_t fif = wil::GetApp().GetFramesInFlight();
 
 		vb = std::make_unique<wil::VertexBuffer>(device, vertices.size() * sizeof(wil::LightVertex3D));
 		ib = std::make_unique<wil::IndexBuffer>(device, indices.size() * sizeof(unsigned));
@@ -116,7 +116,7 @@ public:
 		cb.RecordDraw(index, [this, frame, &mvp, &light](wil::CmdDraw &cmd)
 		{
 			cmd.BindPipeline(GetPipeline());
-			auto size = wil::App::Instance()->GetWindow().GetFramebufferSize();
+			auto size = wil::GetApp().GetWindow().GetFramebufferSize();
 			cmd.SetViewport({0, 0}, size);
 			cmd.SetScissor({0, 0}, size);
 

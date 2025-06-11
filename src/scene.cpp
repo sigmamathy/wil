@@ -7,9 +7,9 @@ Scene::Scene(Device &device, const std::vector<std::string> &layers)
 {
 	layers_.reserve(layers.size());
 	for (auto l : layers)
-		layers_.emplace_back(App::Instance()->GetLayer(l));
+		layers_.emplace_back(GetApp().GetLayer(l));
 
-	uint32_t fif = App::Instance()->GetFramesInFlight();
+	uint32_t fif = GetApp().GetFramesInFlight();
 	syncs_.reserve(fif);
 	for (uint32_t i = 0; i < fif; ++i)
 		syncs_.emplace_back(new DrawPresentSynchronizer(device, layers_.size()));
@@ -30,7 +30,7 @@ bool Scene::Render(uint32_t frame)
 	cbs.reserve(layers_.size());
 	for (auto layer : layers_)
 		cbs.push_back(&layer->Render(frame, index));
-	App::Instance()->GetDevice().GetGraphicsQueue().WaitIdle();
+	GetApp().GetDevice().GetGraphicsQueue().WaitIdle();
 	syncs_[frame]->SubmitDraw(cbs);
 	return syncs_[frame]->PresentToScreen(index);
 }

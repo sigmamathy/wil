@@ -126,8 +126,8 @@ static void TerminateAPIs_()
 
 App::App() : active_(true) {}
 
-App *App::Instance() {
-	return appinst_;
+App &GetApp() {
+	return *appinst_;
 }
 
 void appimpl(App *app, int argc, char **argv)

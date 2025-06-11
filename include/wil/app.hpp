@@ -43,8 +43,6 @@ public:
 
 	WIL_DELETE_COPY_AND_REASSIGNMENT(App);
 
-	static App *Instance();
-
 	virtual void OnInit(AppInitCtx &ctx) {}
 
 	virtual void OnWindowEvent(WindowEvent &ev) {}
@@ -74,5 +72,7 @@ private:
 	friend void appimpl(App *app, int argc, char **argv);
 
 };
+
+App& GetApp();
 
 }

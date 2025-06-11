@@ -7,7 +7,7 @@ namespace wil {
 
 Layer::Layer(Device &device)
 {
-	for (uint32_t i = 0; i < App::Instance()->GetFramesInFlight(); ++i)
+	for (uint32_t i = 0; i < GetApp().GetFramesInFlight(); ++i)
 		cmd_buffers_.emplace_back(device);
 }
 
