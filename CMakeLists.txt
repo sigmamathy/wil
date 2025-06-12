@@ -17,7 +17,6 @@ add_library(${PROJECT_NAME}
 	"src/display.cpp"
 	"src/device.cpp"
 	"src/pipeline.cpp"
-	"src/layer.cpp"
 	"src/drawsync.cpp"
 	"src/buffer.cpp"
 	"src/scene.cpp"

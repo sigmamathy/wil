@@ -1,5 +1,7 @@
 #pragma once
 
+#include "algebra.hpp"
+
 #include <bitset>
 #include <cstdint>
 #include <vector>
@@ -248,6 +250,14 @@ private:
 	// System manager
 	std::unordered_map<std::type_index, std::unique_ptr<System>> systems_{};
 	std::vector<EntityView*> entity_views_;
+};
+
+struct TransformComponent
+{
+	Fvec3 position;
+	Fvec3 size;
+	Fvec3 direction;
+	float spin;
 };
 
 }

@@ -2,7 +2,6 @@
 
 #include "display.hpp"
 #include "device.hpp"
-#include "layer.hpp"
 #include "scene.hpp"
 #include <string>
 #include <unordered_map>
@@ -18,21 +17,21 @@ struct AppInitCtx
 	std::string start_scene;
 
 	template<class T, class... Ts>
-	void NewLayer(Ts&&... args) {
-		layers_.emplace_back([...args = std::forward<Ts>(args)](Device &dev)
-				-> Layer* { return new T(dev, args...); });
-	}
-
-	template<class T, class... Ts>
 	void NewScene(Ts&&... args) {
 		scenes_.emplace_back([...args = std::forward<Ts>(args)](Device &dev)
 				-> Scene* { return new T(dev, args...); });
 	}
 
 private:
-	std::vector<Layer*(*)(Device&)> layers_;
 	std::vector<Scene*(*)(Device&)> scenes_;
 	friend void appimpl(class App *app, int argc, char **argv);
+};
+
+struct FrameData
+{
+	uint32_t index;
+	uint32_t image_index;
+	float elapsed;
 };
 
 class App
@@ -53,18 +52,13 @@ public:
 
 	uint32_t GetFramesInFlight() const { return frames_in_flight_; }
 
-	Layer *GetLayer(const std::string &name) { return layers_.at(name); }
-
 private:
-
-	AppInitCtx CreateAppInitCtx_();
 
 	Window *window_;
 	Device *device_;
 	bool active_;
 	uint32_t frames_in_flight_;
 
-	std::unordered_map<std::string, Layer*> layers_;
 	std::unordered_map<std::string, Scene*> scenes_;
 
 	Scene* current_scene_;

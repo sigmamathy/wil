@@ -3,6 +3,7 @@
 #include <wil/pipeline.hpp>
 #include <wil/drawsync.hpp>
 
+#include <chrono>
 #include <algorithm>
 #include <cstring>
 #define GLFW_INCLUDE_VULKAN
@@ -141,10 +142,15 @@ void appimpl(App *app, int argc, char **argv)
 	app->frames_in_flight_ = ctx.frames_in_flight;
 
 	app->window_ = new Window(vkinstance_, ctx.window);
+	app->device_ = new Device(vkinstance_, app->window_->GetVkSurfacePtr_(),
+			app->window_->GetFramebufferSize(), ctx.vsync);
+
+	Window &window = *app->window_;
+	Device &device = *app->device_;
 
 	bool framebuffer_resized = false;
 
-	app->window_->SetEventHandler([&](WindowEvent &ev) {
+	window.SetEventHandler([&](WindowEvent &ev) {
 		if (ctx.close_button_op && ev.type == ev.WINDOW_CLOSE_EVENT)
 			app->active_ = false;
 		if (ev.type == ev.FRAMEBUFFER_RESIZE_EVENT)
@@ -152,42 +158,39 @@ void appimpl(App *app, int argc, char **argv)
 		app->OnWindowEvent(ev);
 	});
 
-	app->device_ = new Device(vkinstance_, app->window_->GetVkSurfacePtr_(),
-			app->window_->GetFramebufferSize(), ctx.vsync);
-
-	for (auto fn : ctx.layers_) {
-		Layer *l = fn(*app->device_);
-		app->layers_[l->GetName()] = l;
-	}
-
 	for (auto fn : ctx.scenes_) {
-		Scene *s = fn(*app->device_);
+		Scene *s = fn(device);
 		app->scenes_[s->GetName()] = s;
 	}
 
 	app->current_scene_ = app->scenes_.at(ctx.start_scene);
 
-	uint32_t frame = 0;
+	FrameData frame;
+	frame.index = 0;
+
+	auto prev = std::chrono::high_resolution_clock::now();
 
 	while (app->active_) 
 	{
-		if (!app->current_scene_->Render(frame) || framebuffer_resized) {
+		auto now = std::chrono::high_resolution_clock::now();
+		frame.elapsed = (prev - now).count();
+		prev = now;
+
+		if (!app->current_scene_->Update(frame) || framebuffer_resized)
+		{
 			framebuffer_resized = false;
 			app->device_->RecreateSwapchain(app->window_,
 					app->window_->GetFramebufferSize(), ctx.vsync);
 		}
+
 		glfwPollEvents();
-		frame = (frame + 1) % app->frames_in_flight_;
+		frame.index = (frame.index + 1) % app->frames_in_flight_;
 	}
 
 	app->device_->WaitIdle();
 
 	for (auto [_, scene] : app->scenes_) {
 		delete scene;
-	}
-
-	for (auto [_, layer] : app->layers_) {
-		delete layer;
 	}
 
 	delete app->device_;

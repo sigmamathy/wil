@@ -26,7 +26,7 @@ struct VertexAttribLayout
 template<class T>
 uint32_t getvkattribformat_();
 
-#define wilvrta(l, cn, m) VertexAttribLayout{(l), 0, getvkattribformat_<decltype(std::declval<cn>().m)>(), offsetof(cn, m)}
+#define wilvrta(l, cn, m) ::wil::VertexAttribLayout{(l), 0, ::wil::getvkattribformat_<decltype(std::declval<cn>().m)>(), offsetof(cn, m)}
 
 enum DescriptorType
 {
