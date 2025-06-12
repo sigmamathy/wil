@@ -11,6 +11,7 @@ namespace wil {
 struct ModelComponent
 {
 	std::string path;
+	int32_t texture_index;
 };
 
 struct LightComponent
@@ -48,7 +49,7 @@ private:
 	struct LightPushConstant
 	{
 		alignas(16) Fmat4 model;
-		alignas(16) Fvec4 light_color; 
+		alignas(16) Fvec3 light_color; 
 	};
 
 	struct ObjectUniform_0_0

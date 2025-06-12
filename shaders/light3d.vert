@@ -9,7 +9,7 @@ layout(set = 0, binding = 0) uniform GlobalData {
 
 layout(push_constant) uniform PushConstant {
 	mat4 model;
-	vec4 light_color;
+	vec3 light_color;
 } push;
 
 void main() {

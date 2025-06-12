@@ -176,6 +176,7 @@ void appimpl(App *app, int argc, char **argv)
 		frame.elapsed = (prev - now).count();
 		if (frame.elapsed > 1.f) frame.elapsed = 1.f; // cap the time
 		prev = now;
+		frame.app_time = glfwGetTime();
 
 		if (!app->current_scene_->Update(frame) || framebuffer_resized)
 		{

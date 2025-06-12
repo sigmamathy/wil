@@ -32,6 +32,7 @@ struct FrameData
 	uint32_t index;
 	uint32_t image_index;
 	float elapsed;
+	float app_time;
 };
 
 class App

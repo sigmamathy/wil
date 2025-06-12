@@ -4,9 +4,9 @@ layout(location = 0) out vec4 oFrag;
 
 layout(push_constant) uniform PushConstant {
 	mat4 model;
-	vec4 light_color;
+	vec3 light_color;
 } push;
 
 void main() {
-	oFrag = push.light_color;
+	oFrag = vec4(push.light_color, 1.f);
 }
