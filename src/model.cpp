@@ -9,7 +9,11 @@ namespace wil {
 static tinygltf::Model LoadGLTFModel_(const std::string& filename)
 {
 	namespace fs = std::filesystem;
+#ifdef WIN32
+	std::string ext = fs::path(filename).extension().string();
+#else
 	std::string ext = fs::path(filename).extension();
+#endif
 	bool is_binary;
 	if (ext == ".glb") is_binary = true;
 	else if (ext == ".gltf") is_binary = false;
@@ -27,7 +31,7 @@ static tinygltf::Model LoadGLTFModel_(const std::string& filename)
 		WIL_LOGWARN("Warning from tinygltf: {}", warn);
 
     if (!err.empty()) 
-		WIL_LOGERROR("Error from tinygltf: {}", warn);
+		WIL_LOGERROR("Error from tinygltf: {}", err);
 
     if (!status)
 		WIL_LOGERROR("Unable to load model {}", filename);

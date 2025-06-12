@@ -45,7 +45,7 @@ static VkDescriptorType GetVkDescriptorType_(DescriptorType type)
 		// case UNIFORM_BUFFER_DYNAMIC:	return VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER_DYNAMIC;
 		case COMBINED_IMAGE_SAMPLER:	return VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
 	}
-	__builtin_unreachable();
+	WIL_UNREACHABLE;
 }
 
 // also used in cmdbuf.cpp
