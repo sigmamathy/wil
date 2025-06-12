@@ -104,7 +104,7 @@ void DescriptorSet::BindUniform(uint32_t binding, UniformBuffer &buffer)
     vkUpdateDescriptorSets(static_cast<VkDevice>(device_->GetVkDevicePtr_()), 1, &write, 0, nullptr);
 }
 
-void DescriptorSet::BindTexture(uint32_t binding, Texture &texture)
+void DescriptorSet::BindTexture(uint32_t binding, const Texture &texture)
 {
 	VkDescriptorImageInfo ii{};
 	ii.imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;

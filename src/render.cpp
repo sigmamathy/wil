@@ -1,11 +1,16 @@
 #include <wil/render.hpp>
+#include <wil/app.hpp>
 
 namespace wil {
 
 RenderSystem::RenderSystem(Registry& registry, Device &device)
 	: System(registry), registry_(registry)
 {
+	registry.RegisterEntityView<TransformComponent, ModelComponent>(objects_);
+	registry.RegisterEntityView<LightComponent>(lights_);
+
 	CreatePipelines_(device);
+	CreateDescriptorSetsAndUniforms_(device);
 }
 
 void RenderSystem::CreatePipelines_(Device &device)
@@ -47,6 +52,37 @@ void RenderSystem::CreatePipelines_(Device &device)
 	lctor.descriptor_set_layouts[0].Add(0, UNIFORM_BUFFER, VERTEX_SHADER);
 
 	light_pipeline_ = std::make_unique<Pipeline>(lctor);
+}
+
+void RenderSystem::CreateDescriptorSetsAndUniforms_(Device &device)
+{
+	uint32_t fif = GetApp().GetFramesInFlight();
+
+	object_pool_ = std::make_unique<wil::DescriptorPool>(*object_pipeline_, std::vector<uint32_t>{fif, 100});
+	light_pool_ = std::make_unique<wil::DescriptorPool>(*light_pipeline_, std::vector{fif});
+
+	object_0_sets = object_pool_->AllocateSets(0, fif);
+	light_0_sets = light_pool_->AllocateSets(0, fif);
+
+	object_0_0_uniforms.reserve(fif);
+	object_0_1_uniforms.reserve(fif);
+	light_0_0_uniforms.reserve(fif);
+
+	for (uint32_t i = 0; i < fif; ++i)
+	{
+		object_0_0_uniforms.emplace_back(device, sizeof(ObjectUniform_0_0));
+		object_0_1_uniforms.emplace_back(device, sizeof(ObjectUniform_0_1));
+		object_0_sets[i].BindUniform(0, object_0_0_uniforms[i]);
+		object_0_sets[i].BindUniform(1, object_0_1_uniforms[i]);
+
+		light_0_0_uniforms.emplace_back(device, sizeof(LightUniform_0_0));
+		light_0_sets[i].BindUniform(0, light_0_0_uniforms[i]);
+	}
+}
+
+void RenderSystem::Render(CommandBuffer &cb, FrameData &frame)
+{
+
 }
 
 }

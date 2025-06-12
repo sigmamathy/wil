@@ -89,14 +89,14 @@ void CmdDraw::BindPipeline(Pipeline &pipeline)
 			static_cast<VkPipeline>(pipeline.GetVkPipelinePtr_()));
 }
 
-void CmdDraw::BindVertexBuffer(VertexBuffer &buffer)
+void CmdDraw::BindVertexBuffer(const VertexBuffer &buffer)
 {
     VkBuffer b = static_cast<VkBuffer>(buffer.GetVkBufferPtr_());
     VkDeviceSize off = 0;
     vkCmdBindVertexBuffers(static_cast<VkCommandBuffer>(buffer_.buffer_ptr_), 0, 1, &b, &off);
 }
 
-void CmdDraw::BindIndexBuffer(IndexBuffer &buffer)
+void CmdDraw::BindIndexBuffer(const IndexBuffer &buffer)
 {
     VkBuffer b = static_cast<VkBuffer>(buffer.GetVkBufferPtr_());
     vkCmdBindIndexBuffer(static_cast<VkCommandBuffer>(buffer_.buffer_ptr_), b, 0, VK_INDEX_TYPE_UINT32);

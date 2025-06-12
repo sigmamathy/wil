@@ -10,6 +10,7 @@
 
 #include <GLFW/glfw3.h>
 #include <cstring>
+#include <memory>
 
 using namespace wil::algebra;
 using enum wil::ShaderStageBit;
@@ -74,8 +75,8 @@ public:
 
 	std::unique_ptr<wil::Pipeline> pipeline_, light_pipeline_;
 
-	std::unique_ptr<wil::VertexBuffer> vb;
-	std::unique_ptr<wil::IndexBuffer> ib;
+	wil::VertexBuffer vb;
+	wil::IndexBuffer ib;
 	std::unique_ptr<wil::DescriptorPool> light_pool;
 	std::vector<wil::DescriptorSet> light_uniform_sets;
 
@@ -86,8 +87,8 @@ public:
 	std::vector<wil::DescriptorSet> uniform_sets;
 	std::vector<wil::DescriptorSet> tex_sets;
 
-	std::vector<std::unique_ptr<wil::UniformBuffer>> uniforms;
-	std::vector<std::unique_ptr<wil::UniformBuffer>> light_pos_uniforms;
+	std::vector<wil::UniformBuffer> uniforms;
+	std::vector<wil::UniformBuffer> light_pos_uniforms;
 
 	void MakePipelines(wil::Device &device)
 	{
@@ -139,10 +140,10 @@ public:
 
 		uint32_t fif = wil::GetApp().GetFramesInFlight();
 
-		vb = std::make_unique<wil::VertexBuffer>(device, vertices.size() * sizeof(LightVertex3D));
-		ib = std::make_unique<wil::IndexBuffer>(device, indices.size() * sizeof(unsigned));
-		vb->MapData(vertices.data());
-		ib->MapData(indices.data());
+		vb = wil::VertexBuffer(device, vertices.size() * sizeof(LightVertex3D));
+		ib = wil::IndexBuffer(device, indices.size() * sizeof(unsigned));
+		vb.MapData(vertices.data());
+		ib.MapData(indices.data());
 
 		light_pool = std::make_unique<wil::DescriptorPool>(*light_pipeline_, std::vector{fif});
 		light_uniform_sets = light_pool->AllocateSets(0, fif);
@@ -163,15 +164,18 @@ public:
 
 		// texture = std::make_unique<wil::Texture>(device, "../../tests/texture.jpg");
 		for (int i = 0; i < model->GetTextureCount(); ++i)
-			tex_sets[i].BindTexture(0, *model->GetTextures()[i]);
+			tex_sets[i].BindTexture(0, model->GetTextures()[i]);
+
+		uniforms.reserve(fif);
+		light_pos_uniforms.reserve(fif);
 
 		for (int i = 0; i < fif; ++i) {
-			uniforms.emplace_back(new wil::UniformBuffer(device, sizeof(GlobalData3D)));
-			uniform_sets[i].BindUniform(0, *uniforms[i]);
-			light_uniform_sets[i].BindUniform(0, *uniforms[i]);
+			uniforms.emplace_back(wil::UniformBuffer(device, sizeof(GlobalData3D)));
+			uniform_sets[i].BindUniform(0, uniforms[i]);
+			light_uniform_sets[i].BindUniform(0, uniforms[i]);
 
-			light_pos_uniforms.emplace_back(new wil::UniformBuffer(device, sizeof(LightUniform)));
-			uniform_sets[i].BindUniform(1, *light_pos_uniforms[i]);
+			light_pos_uniforms.emplace_back(wil::UniformBuffer(device, sizeof(LightUniform)));
+			uniform_sets[i].BindUniform(1, light_pos_uniforms[i]);
 		}
 	}
 
@@ -199,13 +203,13 @@ public:
 		mvp.view_pos = Fvec3(0.0f, -2.f, -2.f);
 		mvp.view = wil::LookAtView(mvp.view_pos, Fvec3(0.0f, 0.5f, 1.f));
 
-		uniforms[frame.index]->Update(&mvp);
+		uniforms[frame.index].Update(&mvp);
 
 		LightUniform light;
 		light.pos = Fvec3(2 * std::cos(glfwGetTime()), -1.f, 2 * std::sin(glfwGetTime()));
 		light.color = Fvec3(1.f, (std::sin(glfwGetTime() * 0.7f) + 0.5f) / 2, 0.7f);
 
-		light_pos_uniforms[frame.index]->Update(&light);
+		light_pos_uniforms[frame.index].Update(&light);
 
 		cb.RecordDraw(frame.image_index, [this, frame, &mvp, &light](wil::CmdDraw &cmd)
 		{
@@ -226,10 +230,10 @@ public:
 				wil::DescriptorSet sets[] = { uniform_sets[frame.index], tex_sets[m.material_index] };
 
 				cmd.BindDescriptorSets(*pipeline_, 0, sets, 2);
-				cmd.BindVertexBuffer(*m.vertex_buffer);
+				cmd.BindVertexBuffer(m.vertex_buffer);
 
 				if (m.index_buffer) {
-					cmd.BindIndexBuffer(*m.index_buffer);
+					cmd.BindIndexBuffer(m.index_buffer.value());
 					cmd.DrawIndexed(m.draw_count, 1);
 				} else {
 					cmd.Draw(m.draw_count, 1);
@@ -243,8 +247,8 @@ public:
 			push.light_color = light.color & 1.f;
 
 			cmd.PushConstant(*light_pipeline_, &push);
-			cmd.BindVertexBuffer(*vb);
-			cmd.BindIndexBuffer(*ib);
+			cmd.BindVertexBuffer(vb);
+			cmd.BindIndexBuffer(ib);
 			cmd.DrawIndexed(indices.size(), 1);
 		});
 	}

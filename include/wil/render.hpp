@@ -4,6 +4,7 @@
 #include "device.hpp"
 #include "pipeline.hpp"
 #include "descriptor.hpp"
+#include "cmdbuf.hpp"
 
 namespace wil {
 
@@ -23,7 +24,7 @@ public:
 
 	RenderSystem(Registry& registry, Device &device);
 
-	void Render();
+	void Render(CommandBuffer &cb, struct FrameData &frame);
 
 private:
 
@@ -41,29 +42,37 @@ private:
 
 	struct ObjectPushConstant
 	{
-		Fmat4 model;
+		alignas(16) Fmat4 model;
 	};
 
 	struct LightPushConstant
 	{
-		Fmat4 model;
-		Fvec4 light_color; 
+		alignas(16) Fmat4 model;
+		alignas(16) Fvec4 light_color; 
 	};
 
-	struct ObjectUniform_0
+	struct ObjectUniform_0_0
 	{
 		alignas(16) Fmat4 view;
 		alignas(16) Fmat4 proj;
 		alignas(16) Fvec3 view_pos;
 	};
 
-	struct LightUniform_0
+	struct ObjectUniform_0_1
 	{
 		alignas(16) Fvec3 pos;
 		alignas(16) Fvec3 color;
 	};
 
+	struct LightUniform_0_0
+	{
+		alignas(16) Fmat4 view;
+		alignas(16) Fmat4 proj;
+	};
+
 	void CreatePipelines_(Device &device);
+
+	void CreateDescriptorSetsAndUniforms_(Device &device);
 
 	Registry &registry_;
 
@@ -75,6 +84,14 @@ private:
 
 	std::unique_ptr<DescriptorPool> object_pool_;
 	std::unique_ptr<DescriptorPool> light_pool_;
+
+	std::vector<DescriptorSet> object_0_sets;
+	std::vector<DescriptorSet> object_1_sets;
+	std::vector<DescriptorSet> light_0_sets;
+
+	std::vector<UniformBuffer> object_0_0_uniforms; // GlobalData
+	std::vector<UniformBuffer> object_0_1_uniforms; // Lights
+	std::vector<UniformBuffer> light_0_0_uniforms; // GlobalData
 };
 
 }

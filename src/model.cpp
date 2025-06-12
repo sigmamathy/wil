@@ -88,8 +88,8 @@ ExtractMeshes_(const tinygltf::Model& model, Device &device, size_t vsize, const
 				handler(vertices_data.data() + i * vsize, pos, texcoord, normal);
             }
 
-			m.vertex_buffer = std::make_unique<VertexBuffer>(device, vsize * vertexCount);
-			m.vertex_buffer->MapData(vertices_data.data());
+			m.vertex_buffer = VertexBuffer(device, vsize * vertexCount);
+			m.vertex_buffer.MapData(vertices_data.data());
 			m.draw_count = vertexCount;
 
             if (primitive.indices >= 0) {
@@ -114,7 +114,7 @@ ExtractMeshes_(const tinygltf::Model& model, Device &device, size_t vsize, const
                     }
                 }
 
-				m.index_buffer = std::make_unique<IndexBuffer>(device, sizeof(uint32_t) * indexCount);
+				m.index_buffer = IndexBuffer(device, sizeof(uint32_t) * indexCount);
 				m.index_buffer->MapData(indices.data());
 				m.draw_count = indexCount;
             }
@@ -124,10 +124,10 @@ ExtractMeshes_(const tinygltf::Model& model, Device &device, size_t vsize, const
 	return result;
 }
 
-static std::vector<std::unique_ptr<Texture>>
+static std::vector<Texture>
 LoadTextures_(const tinygltf::Model& model, Device &device)
 {
-	std::vector<std::unique_ptr<Texture>> textures;
+	std::vector<Texture> textures;
 
     for (const auto& material : model.materials)
 	{
@@ -139,7 +139,7 @@ LoadTextures_(const tinygltf::Model& model, Device &device)
 
             // Load image data
             if (!image.image.empty()) {
-				textures.push_back(std::make_unique<Texture>(
+				textures.emplace_back(Texture(
 							device, image.image.data(), image.width * image.height * 4, image.width, image.height));
             } else {
 				WIL_LOGERROR("Texture image data is empty");

@@ -123,7 +123,7 @@ CopyViaStagingBuffer_(Device &device, VkDeviceSize size, void const* src, VkBuff
 }
 
 VertexBuffer::VertexBuffer(Device &device, size_t size)
-    : device_(device), size_(size)
+    : device_(&device), size_(size)
 {
     auto [fst, snd] = CreateBufferAndAllocateMemory_(
 			static_cast<VkDevice>(device.GetVkDevicePtr_()),
@@ -138,18 +138,38 @@ VertexBuffer::VertexBuffer(Device &device, size_t size)
 
 VertexBuffer::~VertexBuffer()
 {
-	auto dev = static_cast<VkDevice>(device_.GetVkDevicePtr_());
-    vkDestroyBuffer(dev, static_cast<VkBuffer>(buffer_ptr_), nullptr);
-    vkFreeMemory(dev, static_cast<VkDeviceMemory>(memory_ptr_), nullptr);
+	if (buffer_ptr_) {
+		auto dev = static_cast<VkDevice>(device_->GetVkDevicePtr_());
+		vkDestroyBuffer(dev, static_cast<VkBuffer>(buffer_ptr_), nullptr);
+		vkFreeMemory(dev, static_cast<VkDeviceMemory>(memory_ptr_), nullptr);
+	}
+}
+
+VertexBuffer::VertexBuffer(VertexBuffer &&buffer)
+	: device_(buffer.device_), buffer_ptr_(buffer.buffer_ptr_),
+	memory_ptr_(buffer.memory_ptr_), size_(buffer.size_)
+{
+	buffer.buffer_ptr_ = nullptr;
+}
+
+VertexBuffer& VertexBuffer::operator=(VertexBuffer &&buffer)
+{
+	device_ = buffer.device_;
+	buffer_ptr_ = buffer.buffer_ptr_;
+	memory_ptr_ = buffer.memory_ptr_;
+	size_ = buffer.size_;
+
+	buffer.buffer_ptr_ = nullptr;
+	return *this;
 }
 
 void VertexBuffer::MapData(const void *src)
 {
-    CopyViaStagingBuffer_(device_, size_, src, static_cast<VkBuffer>(buffer_ptr_));
+    CopyViaStagingBuffer_(*device_, size_, src, static_cast<VkBuffer>(buffer_ptr_));
 }
 
 IndexBuffer::IndexBuffer(Device &device, size_t size)
-    : device_(device), size_(size)
+    : device_(&device), size_(size)
 {
     auto [fst, snd] = CreateBufferAndAllocateMemory_(
 			static_cast<VkDevice>(device.GetVkDevicePtr_()),
@@ -164,18 +184,38 @@ IndexBuffer::IndexBuffer(Device &device, size_t size)
 
 IndexBuffer::~IndexBuffer()
 {
-	auto dev = static_cast<VkDevice>(device_.GetVkDevicePtr_());
-    vkDestroyBuffer(dev, static_cast<VkBuffer>(buffer_ptr_), nullptr);
-    vkFreeMemory(dev, static_cast<VkDeviceMemory>(memory_ptr_), nullptr);
+	if (buffer_ptr_) {
+		auto dev = static_cast<VkDevice>(device_->GetVkDevicePtr_());
+		vkDestroyBuffer(dev, static_cast<VkBuffer>(buffer_ptr_), nullptr);
+		vkFreeMemory(dev, static_cast<VkDeviceMemory>(memory_ptr_), nullptr);
+	}
+}
+
+IndexBuffer::IndexBuffer(IndexBuffer &&buffer)
+	: device_(buffer.device_), buffer_ptr_(buffer.buffer_ptr_),
+	memory_ptr_(buffer.memory_ptr_), size_(buffer.size_)
+{
+	buffer.buffer_ptr_ = nullptr;
+}
+
+IndexBuffer& IndexBuffer::operator=(IndexBuffer &&buffer)
+{
+	device_ = buffer.device_;
+	buffer_ptr_ = buffer.buffer_ptr_;
+	memory_ptr_ = buffer.memory_ptr_;
+	size_ = buffer.size_;
+
+	buffer.buffer_ptr_ = nullptr;
+	return *this;
 }
 
 void IndexBuffer::MapData(const unsigned *src)
 {
-    CopyViaStagingBuffer_(device_, size_, src, static_cast<VkBuffer>(buffer_ptr_));
+    CopyViaStagingBuffer_(*device_, size_, src, static_cast<VkBuffer>(buffer_ptr_));
 }
 
 UniformBuffer::UniformBuffer(Device &device, size_t size)
-    : device_(device), size_(size)
+    : device_(&device), size_(size)
 {
     auto [b, m] = CreateBufferAndAllocateMemory_(
 			static_cast<VkDevice>(device.GetVkDevicePtr_()),
@@ -192,9 +232,18 @@ UniformBuffer::UniformBuffer(Device &device, size_t size)
 
 UniformBuffer::~UniformBuffer()
 {
-	auto dev = static_cast<VkDevice>(device_.GetVkDevicePtr_());
-    vkDestroyBuffer(dev, static_cast<VkBuffer>(buffer_ptr_), nullptr);
-    vkFreeMemory(dev, static_cast<VkDeviceMemory>(memory_ptr_), nullptr);
+	if (buffer_ptr_) {
+		auto dev = static_cast<VkDevice>(device_->GetVkDevicePtr_());
+		vkDestroyBuffer(dev, static_cast<VkBuffer>(buffer_ptr_), nullptr);
+		vkFreeMemory(dev, static_cast<VkDeviceMemory>(memory_ptr_), nullptr);
+	}
+}
+
+UniformBuffer::UniformBuffer(UniformBuffer&& buffer)
+	: device_(buffer.device_), buffer_ptr_(buffer.buffer_ptr_), memory_ptr_(buffer.memory_ptr_),
+	  size_(buffer.size_), data_(buffer.data_)
+{
+	buffer.buffer_ptr_ = nullptr;
 }
 
 void UniformBuffer::Update(void const* src)
@@ -325,7 +374,7 @@ static void CopyBufferToImage_(Device &device, VkBuffer buffer, VkImage image, u
 }
 
 Texture::Texture(Device &device, const std::string &path)
-	: device_(device)
+	: device_(&device)
 {
 	int width, height, channels;
 	stbi_uc* pixels = stbi_load(path.c_str(), &width, &height, &channels, STBI_rgb_alpha);
@@ -338,7 +387,7 @@ Texture::Texture(Device &device, const std::string &path)
 	stbi_image_free(pixels);
 }
 
-Texture::Texture(Device &device, const void *data, size_t size, uint32_t width, uint32_t height) : device_(device)
+Texture::Texture(Device &device, const void *data, size_t size, uint32_t width, uint32_t height) : device_(&device)
 {
 	Init_(device, data, size, width, height);
 }
@@ -426,11 +475,36 @@ void Texture::Init_(Device &device, const void *pixels, size_t size, uint32_t wi
 
 Texture::~Texture()
 {
-	auto dev = static_cast<VkDevice>(device_.GetVkDevicePtr_());
-	vkDestroySampler(dev, static_cast<VkSampler>(sampler_ptr_), nullptr);
-	vkDestroyImageView(dev, static_cast<VkImageView>(image_view_ptr_), nullptr);
-	vkDestroyImage(dev, static_cast<VkImage>(image_ptr_), nullptr);
-    vkFreeMemory(dev, static_cast<VkDeviceMemory>(memory_ptr_), nullptr);
+	if (image_ptr_) {
+		auto dev = static_cast<VkDevice>(device_->GetVkDevicePtr_());
+		vkDestroySampler(dev, static_cast<VkSampler>(sampler_ptr_), nullptr);
+		vkDestroyImageView(dev, static_cast<VkImageView>(image_view_ptr_), nullptr);
+		vkDestroyImage(dev, static_cast<VkImage>(image_ptr_), nullptr);
+		vkFreeMemory(dev, static_cast<VkDeviceMemory>(memory_ptr_), nullptr);
+	}
+}
+
+Texture::Texture(Texture &&tex)
+{
+	device_ = tex.device_;
+	image_ptr_ = tex.image_ptr_;
+	memory_ptr_ = tex.memory_ptr_;
+	image_view_ptr_ = tex.image_view_ptr_;
+	sampler_ptr_ = tex.sampler_ptr_;
+
+	tex.image_ptr_ = nullptr;
+}
+
+Texture &Texture::operator=(Texture &&tex)
+{
+	device_ = tex.device_;
+	image_ptr_ = tex.image_ptr_;
+	memory_ptr_ = tex.memory_ptr_;
+	image_view_ptr_ = tex.image_view_ptr_;
+	sampler_ptr_ = tex.sampler_ptr_;
+
+	tex.image_ptr_ = nullptr;
+	return *this;
 }
 
 static VkFormat FindSupportedFormat_(VkPhysicalDevice pd,

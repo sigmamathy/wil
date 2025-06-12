@@ -31,8 +31,8 @@ struct CmdDraw
 	void SetScissor(Ivec2 offset, Uvec2 extent);
 
 	void BindPipeline(Pipeline &pipeline);
-	void BindVertexBuffer(VertexBuffer &buffer);
-	void BindIndexBuffer(IndexBuffer &buffer);
+	void BindVertexBuffer(const VertexBuffer &buffer);
+	void BindIndexBuffer(const IndexBuffer &buffer);
 
 	void BindDescriptorSets(Pipeline &pipeline, int first_set, DescriptorSet *sets, size_t count);
 	void PushConstant(Pipeline &pipeline, const void* data);

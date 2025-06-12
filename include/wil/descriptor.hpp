@@ -17,7 +17,7 @@ public:
 
 	void BindUniform(uint32_t binding, UniformBuffer &buffer);
 
-	void BindTexture(uint32_t binding, Texture &texture);
+	void BindTexture(uint32_t binding, const Texture &texture);
 
 private:
 	Device *device_;
