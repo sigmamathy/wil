@@ -216,11 +216,11 @@ public:
 		entity_views_.emplace_back(&view);
 	}
 
-	template<typename T>
-	T &RegisterSystem()
+	template<class T, class... Ts>
+	T &RegisterSystem(Ts&&... args)
 	{
 		auto i = std::type_index(typeid(T));
-		systems_[i] = std::make_unique<T>(*this);
+		systems_[i] = std::make_unique<T>(*this, std::forward<Ts>(args)...);
 		return *static_cast<T*>(systems_.at(i).get());
 	}
 
