@@ -19,7 +19,7 @@ layout(set = 0, binding = 1) uniform Light {
 
 layout(set = 1, binding = 0) uniform sampler2D uTexSampler;
 
-const float ambient_strength = 0.005f;
+const float ambient_strength = 0.02f;
 const float specular_strength = 0.5f;
 
 void main()

@@ -9,7 +9,7 @@ class DescriptorSet
 {
 public:
 
-	DescriptorSet(std::nullptr_t);
+	DescriptorSet() : descriptor_set_ptr_(nullptr) {}
 
 	DescriptorSet(Device &device, VendorPtr vkdescriptorset);
 	
@@ -32,7 +32,7 @@ public:
 
 	~DescriptorPool();
 
-	std::vector<DescriptorSet> AllocateSets(uint32_t set, uint32_t count);
+	void AllocateSets(uint32_t set, DescriptorSet *outptr, uint32_t count);
 
 	void Reset();
 

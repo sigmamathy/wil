@@ -46,7 +46,7 @@ DescriptorPool::~DescriptorPool()
 	vkDestroyDescriptorPool(device, static_cast<VkDescriptorPool>(pool_ptr_), nullptr);
 }
 
-std::vector<DescriptorSet> DescriptorPool::AllocateSets(uint32_t set, uint32_t count)
+void DescriptorPool::AllocateSets(uint32_t set, DescriptorSet *outptr, uint32_t count)
 {
 	auto device = static_cast<VkDevice>(device_.GetVkDevicePtr_());
 
@@ -64,11 +64,8 @@ std::vector<DescriptorSet> DescriptorPool::AllocateSets(uint32_t set, uint32_t c
 	if (vkAllocateDescriptorSets(device, &desc_set_ai, sets.data()) != VK_SUCCESS)
 		WIL_LOGERROR("Unable to allocate descriptor sets");
 
-	std::vector<DescriptorSet> result;
-	result.reserve(count);
 	for (int i = 0; i < sets.size(); ++i)
-		result.emplace_back(device_, sets[i]);
-	return result;
+		outptr[i] = DescriptorSet(device_, sets[i]);
 }
 
 void DescriptorPool::Reset()
@@ -76,9 +73,6 @@ void DescriptorPool::Reset()
 	auto device = static_cast<VkDevice>(device_.GetVkDevicePtr_());
 	vkResetDescriptorPool(device, static_cast<VkDescriptorPool>(pool_ptr_), 0);
 }
-
-DescriptorSet::DescriptorSet(std::nullptr_t)
-	: device_(nullptr), descriptor_set_ptr_(VK_NULL_HANDLE) {}
 
 DescriptorSet::DescriptorSet(Device &device, VendorPtr vkdescriptorset)
 	: device_(&device), descriptor_set_ptr_(vkdescriptorset)

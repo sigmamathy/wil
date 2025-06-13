@@ -148,10 +148,11 @@ public:
 	}
 
 	template<class... Ts>
-	void AddComponents(Entity entity, Ts&&... components)
+	void AddComponents(Entity entity, Ts... components)
 	{
-		(RegisterComponent<Ts>(), ...);
-		(GetComponentArray<Ts>().InsertData(entity, std::forward<Ts>(components)), ...);
+		(RegisterComponent<std::remove_reference_t<Ts>>(), ...);
+		(GetComponentArray<std::remove_reference_t<Ts>>()
+		 .InsertData(entity, std::forward<std::remove_reference_t<Ts>>(components)), ...);
 
 		auto signature = signatures_[entity];
 		(signature.set(GetComponentType<Ts>(), true), ...);
@@ -227,7 +228,7 @@ public:
 	template<class T>
 	T &GetSystem()
 	{
-		return systems_.at(std::type_index(typeid(T)));
+		return *static_cast<T*>(systems_.at(std::type_index(typeid(T))).get());
 	}
 
 private:

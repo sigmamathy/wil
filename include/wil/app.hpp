@@ -43,7 +43,7 @@ public:
 
 	WIL_DELETE_COPY_AND_REASSIGNMENT(App);
 
-	virtual void OnInit(AppInitCtx &ctx) {}
+	virtual void OnInit(AppInitCtx &ctx) = 0;
 
 	virtual void OnWindowEvent(WindowEvent &ev) {}
 

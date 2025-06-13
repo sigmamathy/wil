@@ -5,13 +5,14 @@
 #include "pipeline.hpp"
 #include "descriptor.hpp"
 #include "cmdbuf.hpp"
+#include "model.hpp"
 
 namespace wil {
 
 struct ModelComponent
 {
 	std::string path;
-	int32_t texture_index;
+	uint32_t texture_index;
 };
 
 struct LightComponent
@@ -76,6 +77,7 @@ private:
 	void CreateDescriptorSetsAndUniforms_(Device &device);
 
 	Registry &registry_;
+	Device &device_;
 
 	EntityView objects_;
 	EntityView lights_;
@@ -93,6 +95,8 @@ private:
 	std::vector<UniformBuffer> object_0_0_uniforms; // GlobalData
 	std::vector<UniformBuffer> object_0_1_uniforms; // Lights
 	std::vector<UniformBuffer> light_0_0_uniforms; // GlobalData
+
+	std::unordered_map<std::string, Model> models_;
 };
 
 }

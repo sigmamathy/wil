@@ -8,3 +8,4 @@ endfunction()
 
 create_test("1")
 create_test("2")
+create_test("3")

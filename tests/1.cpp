@@ -146,7 +146,8 @@ public:
 		ib.MapData(indices.data());
 
 		light_pool = std::make_unique<wil::DescriptorPool>(*light_pipeline_, std::vector{fif});
-		light_uniform_sets = light_pool->AllocateSets(0, fif);
+		light_uniform_sets.resize(fif);
+		light_pool->AllocateSets(0, light_uniform_sets.data(), fif);
 
 		model = std::make_unique<wil::Model>(device, "../../tests/Duck.glb", sizeof(Vertex3D), [](void *data, Fvec3 pos, Fvec2 texcoord, Fvec3 normal){
 			Vertex3D v;
@@ -159,8 +160,11 @@ public:
 		pool = std::make_unique<wil::DescriptorPool>(*pipeline_,
 				std::vector<uint32_t>{fif, static_cast<uint32_t>(model->GetTextureCount())});
 
-		uniform_sets = pool->AllocateSets(0, fif);
-		tex_sets = pool->AllocateSets(1, model->GetTextureCount());
+		uniform_sets.resize(fif);
+		tex_sets.resize(model->GetTextureCount());
+
+		pool->AllocateSets(0, uniform_sets.data(), fif);
+		pool->AllocateSets(1, tex_sets.data(), model->GetTextureCount());
 
 		// texture = std::make_unique<wil::Texture>(device, "../../tests/texture.jpg");
 		for (int i = 0; i < model->GetTextureCount(); ++i)
