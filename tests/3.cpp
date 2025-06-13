@@ -45,7 +45,7 @@ public:
 		std::vector<wil::CommandBuffer*> cbs;
 		cbs.emplace_back(&cmdbufs[frame.index]);
 		registry.GetSystem<wil::RenderSystem>().Render(cmdbufs[frame.index], frame);
-		wil::GetApp().GetDevice().GetGraphicsQueue().WaitIdle();
+		// wil::GetApp().GetDevice().GetGraphicsQueue().WaitIdle();
 		sync.SubmitDraw(cbs);
 		sync.PresentToScreen(frame.image_index);
 		return true;
