@@ -6,6 +6,13 @@
 
 namespace wil {
 
+template<class T>
+struct SceneInfo;
+
+#define WIL_SCENE_CLASS(c) class c;\
+		template<> struct wil::SceneInfo<c>{ static constexpr std::string_view name = #c; };\
+		class c : public ::wil::Scene
+
 class Scene
 {
 public:
@@ -21,8 +28,6 @@ public:
 	}
 
 	virtual bool Update(struct FrameData &frame) = 0;
-	
-	virtual std::string GetName() const = 0;
 
 private:
 

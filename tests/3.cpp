@@ -4,7 +4,7 @@
 #include <wil/render.hpp>
 #include <wil/log.hpp>
 
-class GameScene : public wil::Scene
+WIL_SCENE_CLASS(GameScene)
 {
 public:
 
@@ -19,7 +19,7 @@ public:
 
 		wil::TransformComponent tc = {
 			{0, 0, 0},
-			{0.01f, -0.01f, 0.01f},
+			{0.01f, 0.01f, 0.01f},
 			{0, 1, 0},
 			0.f
 		};
@@ -32,7 +32,6 @@ public:
 		registry.AddComponents(e1, tc, mc);
 
 		tc.position = {2, 0, 0};
-		WIL_LOGINFO("{}", mc.path);
 
 		auto e2 = registry.CreateEntity();
 		registry.AddComponents(e2, tc, mc);
@@ -51,10 +50,6 @@ public:
 		sync.PresentToScreen(frame.image_index);
 		return true;
 	}
-
-	std::string GetName() const override {
-		return "GameScene";
-	}
 };
 
 class Sandbox : public wil::App
@@ -65,8 +60,7 @@ public:
 	{
 		ctx.window.size = {1600, 900};
 		ctx.window.title = "My App";
-		ctx.NewScene<GameScene>();
-		ctx.start_scene = "GameScene";
+		ctx.start_scene = ctx.NewScene<GameScene>();
 	}
 
 };

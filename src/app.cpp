@@ -3,6 +3,7 @@
 #include <wil/pipeline.hpp>
 #include <wil/drawsync.hpp>
 
+#include <cassert>
 #include <chrono>
 #include <algorithm>
 #include <cstring>
@@ -139,6 +140,9 @@ void appimpl(App *app, int argc, char **argv)
 	AppInitCtx ctx;
 	app->OnInit(ctx);
 
+	WIL_ASSERT(!ctx.scenes_.empty() && "At least one scene are required to be provided");
+	WIL_ASSERT(!ctx.start_scene.empty() && "Start scene needs to be specified");
+
 	app->frames_in_flight_ = ctx.frames_in_flight;
 
 	app->window_ = new Window(vkinstance_, ctx.window);
@@ -158,9 +162,9 @@ void appimpl(App *app, int argc, char **argv)
 		app->OnWindowEvent(ev);
 	});
 
-	for (auto fn : ctx.scenes_) {
+	for (auto [name, fn] : ctx.scenes_) {
 		Scene *s = fn(device);
-		app->scenes_[s->GetName()] = s;
+		app->scenes_[std::string(name)] = s;
 	}
 
 	app->current_scene_ = app->scenes_.at(ctx.start_scene);

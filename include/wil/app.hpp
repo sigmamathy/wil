@@ -17,13 +17,15 @@ struct AppInitCtx
 	std::string start_scene;
 
 	template<class T, class... Ts>
-	void NewScene(Ts&&... args) {
-		scenes_.emplace_back([...args = std::forward<Ts>(args)](Device &dev)
-				-> Scene* { return new T(dev, args...); });
+	std::string_view NewScene(Ts&&... args) {
+		auto f = [...args = std::forward<Ts>(args)](Device &dev)
+				-> Scene* { return new T(dev, args...); };
+		scenes_.emplace_back(std::make_pair(SceneInfo<T>::name, f));
+		return SceneInfo<T>::name;
 	}
 
 private:
-	std::vector<Scene*(*)(Device&)> scenes_;
+	std::vector<std::pair<std::string_view, Scene*(*)(Device&)>> scenes_;
 	friend void appimpl(class App *app, int argc, char **argv);
 };
 

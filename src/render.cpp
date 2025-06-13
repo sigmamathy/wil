@@ -1,6 +1,7 @@
 #include <wil/render.hpp>
 #include <wil/app.hpp>
 #include <wil/transform.hpp>
+#include <wil/log.hpp>
 
 namespace wil {
 
@@ -88,10 +89,10 @@ void RenderSystem::CreateDescriptorSetsAndUniforms_(Device &device)
 
 void RenderSystem::Render(CommandBuffer &cb, FrameData &frame)
 {
-	Fvec3 camera_pos = {0.f, -2.f, -2.f};
-	Fvec3 camera_ori = {0.f, 0.5f, 1.f};
+	Fvec3 camera_pos = {0.f, 3.f, -4.f};
+	Fvec3 camera_ori = {0.f, -0.5f, 1.f};
 
-	Fmat4 proj = PerspectiveProjection(2.0944f, 16.f/9, .1f, 100.f);
+	Fmat4 proj = PerspectiveProjection(90.f*3.14f/180.f, 16.f/9, .1f, 100.f);
 	Fmat4 cam = LookAtView(camera_pos, camera_ori);
 
 	ObjectUniform_0_0 obj00 = { cam, proj, camera_pos };

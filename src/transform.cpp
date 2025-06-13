@@ -117,7 +117,7 @@ Fmat4 PerspectiveProjection(float fovy, float aspect, float near, float far)
 	Fmat4 res(0.0f);
 	float const tanHalfFovy = tan(fovy / 2.0f);
 	res(0, 0) = 1.0f / (-aspect * tanHalfFovy);
-	res(1, 1) = 1.0f / (tanHalfFovy);
+	res(1, 1) = -1.0f / (tanHalfFovy);
 	res(2, 2) = -(far + near) / (far - near);
 	res(3, 2) = -1.0f;
 	res(2, 3) = -(2.0f * far * near) / (far - near);

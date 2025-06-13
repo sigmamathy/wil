@@ -25,6 +25,13 @@ void LogFormatString(LogSeverity severity, std::format_string<Ts...> fmt, Ts&&..
 #define WIL_LOGERROR(...) LogFormatString(::wil::LOG_SEVERITY_ERROR, __VA_ARGS__)
 #define WIL_LOGFATAL(...) LogFormatString(::wil::LOG_SEVERITY_FATAL, __VA_ARGS__)
 
+#ifndef NDEBUG
+#define WIL_ASSERT(...) if (!(__VA_ARGS__))\
+		WIL_LOGFATAL("Assertion '{}' failed. (" __FILE__ ":{})", #__VA_ARGS__, __LINE__);
+#else
+#define WIL_ASSERT(...)
+#endif
+
 void LogVulkan(int severity, const std::string &msg);
 
 template<class T, unsigned Dim> class Vector;

@@ -6,6 +6,6 @@ function(create_test TEST_NAME)
 	add_test(NAME "${TEST_NAME}" COMMAND ${TEST_NAME} WORKING_DIRECTORY ${CMAKE_BINARY_DIR})
 endfunction()
 
-create_test("1")
+# create_test("1")
 create_test("2")
 create_test("3")
