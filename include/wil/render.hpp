@@ -18,6 +18,8 @@ struct ModelComponent
 struct LightComponent
 {
 	Fvec3 color;
+	float linear;
+	float quadratic;
 };
 
 class RenderSystem : public System
@@ -64,6 +66,8 @@ private:
 	{
 		WIL_ALIGN_STD140(Fvec3) pos;
 		WIL_ALIGN_STD140(Fvec3) color;
+		WIL_ALIGN_STD140(float) linear;
+		WIL_ALIGN_STD140(float) quadratic;
 	};
 
 	struct ObjectStorage_0_1

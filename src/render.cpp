@@ -163,7 +163,9 @@ void RenderSystem::Render(CommandBuffer &cb, FrameData &frame)
 
 				obj01.data[obj01.count++] = ObjectLightData {
 					.pos = tc.position,
-					.color = lc.color
+					.color = lc.color,
+					.linear = lc.linear,
+					.quadratic = lc.quadratic,
 				};
 			}
 		}

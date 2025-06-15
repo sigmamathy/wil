@@ -15,6 +15,9 @@ layout(set = 0, binding = 0) uniform GlobalData {
 struct LightData {
 	vec3 pos;
 	vec3 color;
+
+	float linear;
+	float quadratic;
 };
 
 layout(std140, set = 0, binding = 1) readonly buffer Lights {
@@ -39,9 +42,13 @@ vec3 calculate_light(LightData data)
 	vec3 diffuse = max(dot(norm, lightDir), 0.0) * data.color;
 
 	float spec = pow(max(dot(viewDir, reflectDir), 0.0), 32);
-	vec3 specular = specular_strength * spec * data.color;  
+	vec3 specular = specular_strength * spec * data.color;
 
-	return ambient + diffuse + specular;
+	float dist = length(data.pos - vFragPos);
+	float attenuation = 1.0 / (1.0 + data.linear * dist + 
+			data.quadratic * (dist * dist));  
+
+	return attenuation * (ambient + diffuse + specular);
 }
 
 void main()

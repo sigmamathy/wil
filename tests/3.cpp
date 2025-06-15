@@ -18,7 +18,7 @@ public:
 		registry.RegisterSystem<wil::RenderSystem>(device);
 
 		wil::TransformComponent tc = {
-			{0, 0, 0},
+			{-2, 0, 0},
 			{0.01f, 0.01f, 0.01f},
 			{0, 1, 0},
 			0.f
@@ -37,7 +37,9 @@ public:
 		registry.AddComponents(e2, tc, mc);
 
 		wil::LightComponent lc = {
-			{0.f, 1.f, 1.f}
+			{1.f, 1.f, 1.f},
+			0.22f,
+			0.20f
 		};
 
 		tc.position = {-3.f, 3.f, 0.f};
@@ -47,7 +49,7 @@ public:
 		registry.AddComponents(e3, tc, lc);
 
 		tc.position = {3.f, 3.f, 0.f};
-		lc.color = {1.f, 0.f, 1.f};
+		lc.color = {1.f, 0.f, 0.f};
 
 		auto e4 = registry.CreateEntity();
 		registry.AddComponents(e4, tc, lc);
