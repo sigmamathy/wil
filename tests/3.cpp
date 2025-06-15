@@ -35,6 +35,23 @@ public:
 
 		auto e2 = registry.CreateEntity();
 		registry.AddComponents(e2, tc, mc);
+
+		wil::LightComponent lc = {
+			{0.f, 1.f, 1.f}
+		};
+
+		tc.position = {-3.f, 3.f, 0.f};
+		tc.size = {1.f,1.f,1.f};
+
+		auto e3 = registry.CreateEntity();
+		registry.AddComponents(e3, tc, lc);
+
+		tc.position = {3.f, 3.f, 0.f};
+		lc.color = {1.f, 0.f, 1.f};
+
+		auto e4 = registry.CreateEntity();
+		registry.AddComponents(e4, tc, lc);
+
 	}
 
 	bool Update(wil::FrameData &frame) override

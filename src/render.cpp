@@ -13,6 +13,33 @@ RenderSystem::RenderSystem(Registry& registry, Device &device)
 
 	CreatePipelines_(device);
 	CreateDescriptorSetsAndUniforms_(device);
+
+	static const std::vector<LightVertex> vertices = {
+		{{-0.5f, -0.5f, -0.5f}},
+		{{0.5f, -0.5f, -0.5f}},
+		{{0.5f, 0.5f, -0.5f}},
+		{{-0.5f, 0.5f, -0.5f}},
+
+		{{-0.5f, -0.5f, 0.5f}},
+		{{0.5f, -0.5f, 0.5f}},
+		{{0.5f, 0.5f, 0.5f}},
+		{{-0.5f, 0.5f, 0.5f}},
+	};
+
+	static const std::vector<unsigned> indices = {
+		0, 1, 2, 2, 3, 0,
+		4, 5, 6, 6, 7, 4,
+		0, 3, 7, 0, 4, 7,
+		1, 2, 5, 2, 5, 6,
+		0, 1, 4, 1, 4, 5,
+		2, 3, 6, 3, 6, 7,
+	};
+
+	cube_vbo = VertexBuffer(device, vertices.size() * sizeof(LightVertex));
+	cube_ibo = IndexBuffer(device, indices.size() * sizeof(unsigned));
+
+	cube_vbo.MapData(vertices.data());
+	cube_ibo.MapData(indices.data());
 }
 
 void RenderSystem::CreatePipelines_(Device &device)
@@ -33,7 +60,7 @@ void RenderSystem::CreatePipelines_(Device &device)
 
 	octor.descriptor_set_layouts.resize(2);
 	octor.descriptor_set_layouts[0].Add(0, UNIFORM_BUFFER, VERTEX_SHADER | FRAGMENT_SHADER);
-	octor.descriptor_set_layouts[0].Add(1, UNIFORM_BUFFER, FRAGMENT_SHADER);
+	octor.descriptor_set_layouts[0].Add(1, STORAGE_BUFFER, FRAGMENT_SHADER);
 	octor.descriptor_set_layouts[1].Add(0, COMBINED_IMAGE_SAMPLER, FRAGMENT_SHADER);
 
 	object_pipeline_ = std::make_unique<Pipeline>(octor);
@@ -72,15 +99,16 @@ void RenderSystem::CreateDescriptorSetsAndUniforms_(Device &device)
 	object_1_sets.reserve(fif);
 
 	object_0_0_uniforms.reserve(fif);
-	object_0_1_uniforms.reserve(fif);
+	object_0_1_storages.reserve(fif);
 	light_0_0_uniforms.reserve(fif);
 
 	for (uint32_t i = 0; i < fif; ++i)
 	{
 		object_0_0_uniforms.emplace_back(device, sizeof(ObjectUniform_0_0));
-		object_0_1_uniforms.emplace_back(device, sizeof(ObjectUniform_0_1));
+		object_0_1_storages.emplace_back(device, sizeof(ObjectStorage_0_1));
+
 		object_0_sets[i].BindUniform(0, object_0_0_uniforms[i]);
-		object_0_sets[i].BindUniform(1, object_0_1_uniforms[i]);
+		object_0_sets[i].BindStorage(1, object_0_1_storages[i]);
 
 		light_0_0_uniforms.emplace_back(device, sizeof(LightUniform_0_0));
 		light_0_sets[i].BindUniform(0, light_0_0_uniforms[i]);
@@ -104,19 +132,43 @@ void RenderSystem::Render(CommandBuffer &cb, FrameData &frame)
 	Fvec3 light_pos = {2 * std::cos(frame.app_time), -1.f, 2 * std::sin(frame.app_time)};
 	Fvec3 light_color = {1.f, (std::sin(frame.app_time * 0.7f) + 0.5f) / 2, 0.7f};
 
-	// update later
-	ObjectUniform_0_1 obj01 = { light_pos, light_color };
-	object_0_1_uniforms[frame.index].Update(&obj01);
-
-	// for (Entity e : lights_.set) {
-	// 	auto light
-	// }
-
 	cb.RecordDraw(frame.image_index, [&, this, frame](wil::CmdDraw &cmd)
 	{
 		auto size = wil::GetApp().GetWindow().GetFramebufferSize();
 		cmd.SetViewport({0, 0}, size);
 		cmd.SetScissor({0, 0}, size);
+
+		ObjectStorage_0_1 obj01;
+		obj01.count = 0;
+
+		cmd.BindPipeline(*light_pipeline_);
+
+		wil::DescriptorSet lsets[] = { light_0_sets[frame.index] };
+		cmd.BindDescriptorSets(*light_pipeline_, 0, lsets, 1);
+
+		for (Entity e : lights_.set)
+		{
+			if (registry_.HasComponents<TransformComponent>(e))
+			{
+				auto [tc, lc] = registry_.GetComponents<TransformComponent,LightComponent>(e);
+
+				LightPushConstant push;
+				push.model = wil::TranslateModel(tc.position);
+				push.light_color = lc.color;
+
+				cmd.PushConstant(*light_pipeline_, &push);
+				cmd.BindVertexBuffer(cube_vbo);
+				cmd.BindIndexBuffer(cube_ibo);
+				cmd.DrawIndexed(36, 1);
+
+				obj01.data[obj01.count++] = ObjectLightData {
+					.pos = tc.position,
+					.color = lc.color
+				};
+			}
+		}
+
+		object_0_1_storages[frame.index].Update(&obj01);
 
 		cmd.BindPipeline(*object_pipeline_);
 
@@ -164,16 +216,6 @@ void RenderSystem::Render(CommandBuffer &cb, FrameData &frame)
 				}
 			}
 		}
-		// cmd.BindPipeline(*light_pipeline_);
-		// cmd.BindDescriptorSets(*light_pipeline_, 0, &light_uniform_sets[frame.index], 1);
-		// LightPushConstant3D push;
-		// push.model = wil::TranslateModel(light.pos);
-		// push.light_color = light.color & 1.f;
-		//
-		// cmd.PushConstant(*light_pipeline_, &push);
-		// cmd.BindVertexBuffer(vb);
-		// cmd.BindIndexBuffer(ib);
-		// cmd.DrawIndexed(indices.size(), 1);
 	});
 	
 }

@@ -108,6 +108,25 @@ void DescriptorSet::BindUniform(uint32_t binding, UniformBuffer &buffer)
     vkUpdateDescriptorSets(static_cast<VkDevice>(device_->GetVkDevicePtr_()), 1, &write, 0, nullptr);
 }
 
+void DescriptorSet::BindStorage(uint32_t binding, StorageBuffer &buffer)
+{
+	VkDescriptorBufferInfo bi{};
+	bi.buffer = static_cast<VkBuffer>(buffer.GetVkBufferPtr_());
+	bi.offset = 0;
+	bi.range = buffer.GetSize();
+
+    VkWriteDescriptorSet write{};
+    write.sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
+    write.dstSet = static_cast<VkDescriptorSet>(descriptor_set_ptr_);
+    write.dstBinding = binding;
+    write.dstArrayElement = 0;
+    write.descriptorType = VK_DESCRIPTOR_TYPE_STORAGE_BUFFER;
+    write.descriptorCount = 1;
+    write.pBufferInfo = &bi;
+
+    vkUpdateDescriptorSets(static_cast<VkDevice>(device_->GetVkDevicePtr_()), 1, &write, 0, nullptr);
+}
+
 void DescriptorSet::BindTexture(uint32_t binding, const Texture &texture)
 {
 	VkDescriptorImageInfo ii{};

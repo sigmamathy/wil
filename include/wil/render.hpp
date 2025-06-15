@@ -44,26 +44,33 @@ private:
 
 	struct ObjectPushConstant
 	{
-		alignas(16) Fmat4 model;
+		WIL_ALIGN_STD140(Fmat4) model;
 	};
 
 	struct LightPushConstant
 	{
-		alignas(16) Fmat4 model;
-		alignas(16) Fvec3 light_color; 
+		WIL_ALIGN_STD140(Fmat4) model;
+		WIL_ALIGN_STD140(Fvec3) light_color; 
 	};
 
 	struct ObjectUniform_0_0
 	{
-		alignas(16) Fmat4 view;
-		alignas(16) Fmat4 proj;
-		alignas(16) Fvec3 view_pos;
+		WIL_ALIGN_STD140(Fmat4) view;
+		WIL_ALIGN_STD140(Fmat4) proj;
+		WIL_ALIGN_STD140(Fvec3) view_pos;
 	};
 
-	struct ObjectUniform_0_1
+	struct ObjectLightData
 	{
-		alignas(16) Fvec3 pos;
-		alignas(16) Fvec3 color;
+		WIL_ALIGN_STD140(Fvec3) pos;
+		WIL_ALIGN_STD140(Fvec3) color;
+	};
+
+	struct ObjectStorage_0_1
+	{
+		static constexpr unsigned MAX_COUNT = 100;
+		ObjectLightData data[MAX_COUNT];
+		WIL_ALIGN_STD140(unsigned) count;
 	};
 
 	struct LightUniform_0_0
@@ -93,10 +100,13 @@ private:
 	std::vector<DescriptorSet> light_0_sets;
 
 	std::vector<UniformBuffer> object_0_0_uniforms; // GlobalData
-	std::vector<UniformBuffer> object_0_1_uniforms; // Lights
+	std::vector<StorageBuffer> object_0_1_storages; // Lights
 	std::vector<UniformBuffer> light_0_0_uniforms; // GlobalData
 
 	std::unordered_map<std::string, Model> models_;
+
+	VertexBuffer cube_vbo;
+	IndexBuffer cube_ibo;
 };
 
 }

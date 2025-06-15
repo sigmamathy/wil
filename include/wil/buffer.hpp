@@ -102,11 +102,17 @@ class StorageBuffer
 {
 public:
 
+	StorageBuffer() : buffer_ptr_(nullptr) {}
+
 	StorageBuffer(Device &device, size_t size);
 
 	~StorageBuffer();
 
 	WIL_DELETE_COPY_AND_REASSIGNMENT(StorageBuffer);
+
+	StorageBuffer(StorageBuffer &&buffer);
+
+	StorageBuffer &operator=(StorageBuffer &&buffer);
 
 	void Update(const void *src);
 

@@ -17,6 +17,8 @@ public:
 
 	void BindUniform(uint32_t binding, UniformBuffer &buffer);
 
+	void BindStorage(uint32_t binding, StorageBuffer &buffer);
+
 	void BindTexture(uint32_t binding, const Texture &texture);
 
 private:
@@ -66,8 +68,10 @@ constexpr size_t std140_alignment()
 			|| std::is_same_v<T, Uvec4>)
 		return 16;
 
-	if (std::is_same_v<T, Fmat2>
-			|| std::is_same_v<T, Fmat3>
+	if (std::is_same_v<T, Fmat2>)
+		return 8;
+
+	if (std::is_same_v<T, Fmat3>
 			|| std::is_same_v<T, Fmat4>)
 		return 16;
 

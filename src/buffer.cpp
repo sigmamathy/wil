@@ -293,6 +293,29 @@ void StorageBuffer::Update(void const* src)
 	std::memcpy(data_, src, size_);
 }
 
+StorageBuffer::StorageBuffer(StorageBuffer &&buffer)
+{
+	device_ = buffer.device_;
+	buffer_ptr_ = buffer.buffer_ptr_;
+	memory_ptr_ = buffer.memory_ptr_;
+	size_ = buffer.size_;
+	data_ = buffer.data_;
+
+	buffer.buffer_ptr_ = nullptr;
+}
+
+StorageBuffer &StorageBuffer::operator=(StorageBuffer &&buffer)
+{
+	device_ = buffer.device_;
+	buffer_ptr_ = buffer.buffer_ptr_;
+	memory_ptr_ = buffer.memory_ptr_;
+	size_ = buffer.size_;
+	data_ = buffer.data_;
+
+	buffer.buffer_ptr_ = nullptr;
+	return *this;
+}
+
 static std::pair<VkImage, VkDeviceMemory>
 CreateImageAndAllocateMemory_(VkDevice dev, VkPhysicalDevice pd, uint32_t width, uint32_t height,
 		VkFormat format, VkImageTiling tiling, VkImageUsageFlags usage, VkMemoryPropertyFlags properties)
