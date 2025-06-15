@@ -18,7 +18,7 @@ public:
 
 	VertexBuffer(VertexBuffer &&buffer);
 
-	VertexBuffer& operator=(VertexBuffer &&buffer);
+	VertexBuffer &operator=(VertexBuffer &&buffer);
 
     void MapData(const void* src);
 
@@ -49,7 +49,7 @@ public:
 
 	IndexBuffer(IndexBuffer &&buffer);
 
-	IndexBuffer& operator=(IndexBuffer &&buffer);
+	IndexBuffer &operator=(IndexBuffer &&buffer);
 
     void MapData(const unsigned* src);
 
@@ -102,7 +102,7 @@ class StorageBuffer
 {
 public:
 
-	StorageBuffer();
+	StorageBuffer(Device &device, size_t size);
 
 	~StorageBuffer();
 

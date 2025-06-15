@@ -263,6 +263,36 @@ void UniformBuffer::Update(void const* src)
 	std::memcpy(data_, src, size_);
 }
 
+StorageBuffer::StorageBuffer(Device &device, size_t size)
+	: device_(&device), size_(size)
+{
+    auto [b, m] = CreateBufferAndAllocateMemory_(
+			static_cast<VkDevice>(device.GetVkDevicePtr_()),
+			static_cast<VkPhysicalDevice>(device.GetVkPhysicalDevicePtr_()),
+			size,
+			VK_BUFFER_USAGE_STORAGE_BUFFER_BIT,
+			VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT);
+
+    buffer_ptr_ = b;
+    memory_ptr_ = m;
+
+    vkMapMemory(static_cast<VkDevice>(device.GetVkDevicePtr_()), m, 0, size, 0, &data_);
+}
+
+StorageBuffer::~StorageBuffer()
+{
+	if (buffer_ptr_) {
+		auto dev = static_cast<VkDevice>(device_->GetVkDevicePtr_());
+		vkDestroyBuffer(dev, static_cast<VkBuffer>(buffer_ptr_), nullptr);
+		vkFreeMemory(dev, static_cast<VkDeviceMemory>(memory_ptr_), nullptr);
+	}
+}
+
+void StorageBuffer::Update(void const* src)
+{
+	std::memcpy(data_, src, size_);
+}
+
 static std::pair<VkImage, VkDeviceMemory>
 CreateImageAndAllocateMemory_(VkDevice dev, VkPhysicalDevice pd, uint32_t width, uint32_t height,
 		VkFormat format, VkImageTiling tiling, VkImageUsageFlags usage, VkMemoryPropertyFlags properties)
