@@ -11,16 +11,26 @@ namespace wil {
 DescriptorPool::DescriptorPool(Pipeline &pipeline, const std::vector<uint32_t> &max_sets)
 	: device_(pipeline.GetDevice()), layouts_(pipeline.GetDescriptorSetLayouts())
 {
-	std::array<uint32_t, 2> descriptor_count = {0, 0};
-	for (int i = 0; i < layouts_.size(); ++i) {
+	std::array<uint32_t, WIL_DESCRIPTOR_TYPE_ENUM_MAX> descriptor_count = {0, 0, 0, 0};
+
+	for (int i = 0; i < layouts_.size(); ++i)
+	{
 		auto &c = layouts_[i].descriptor_count_;
-		descriptor_count[UNIFORM_BUFFER] += c[UNIFORM_BUFFER] * max_sets[i];
-		descriptor_count[COMBINED_IMAGE_SAMPLER] += c[COMBINED_IMAGE_SAMPLER] * max_sets[i];
+		for (int j = 0; j < WIL_DESCRIPTOR_TYPE_ENUM_MAX; ++j) {
+			descriptor_count[j] += c[j] * max_sets[i];
+		}
 	}
-	const VkDescriptorType types[] = {VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER};
+
+	constexpr VkDescriptorType types[] = {
+		VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER,
+		VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER_DYNAMIC,
+		VK_DESCRIPTOR_TYPE_STORAGE_BUFFER,
+		VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER
+	};
 
 	std::vector<VkDescriptorPoolSize> pool_sizes;
-	for (int i = 0; i < 2; ++i)
+
+	for (int i = 0; i < WIL_DESCRIPTOR_TYPE_ENUM_MAX; ++i)
 	{
 		if (!descriptor_count[i]) continue;
 		pool_sizes.push_back({types[i], descriptor_count[i]});

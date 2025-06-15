@@ -31,9 +31,12 @@ uint32_t getvkattribformat_();
 enum DescriptorType
 {
 	UNIFORM_BUFFER,
-	// UNIFORM_BUFFER_DYNAMIC,
+	UNIFORM_BUFFER_DYNAMIC,
+	STORAGE_BUFFER,
 	COMBINED_IMAGE_SAMPLER,
 };
+
+#define WIL_DESCRIPTOR_TYPE_ENUM_MAX 4
 
 struct DescriptorSetLayout
 {
@@ -46,7 +49,7 @@ struct DescriptorSetLayout
 	void Add(uint32_t binding, DescriptorType type, ShaderStageBit stage);
 
 	std::vector<Binding> bindings_;
-	std::array<uint32_t, 2> descriptor_count_ = {0, 0};
+	std::array<uint32_t, WIL_DESCRIPTOR_TYPE_ENUM_MAX> descriptor_count_ = {0, 0, 0, 0};
 	VendorPtr descriptor_set_layout_ptr_;
 };
 
