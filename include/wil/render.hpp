@@ -68,8 +68,8 @@ private:
 
 	struct LightUniform_0_0
 	{
-		alignas(16) Fmat4 view;
-		alignas(16) Fmat4 proj;
+		WIL_ALIGN_STD140(Fmat4) view;
+		WIL_ALIGN_STD140(Fmat4) proj;
 	};
 
 	void CreatePipelines_(Device &device);

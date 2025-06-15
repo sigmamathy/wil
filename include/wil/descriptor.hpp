@@ -43,4 +43,37 @@ private:
 	VendorPtr pool_ptr_;
 };
 
+template<class T>
+constexpr size_t std140_alignment()
+{
+	if (std::is_same_v<T, float>
+			|| std::is_same_v<T, int>
+			|| std::is_same_v<T, unsigned>)
+		return 4;
+
+	if (std::is_same_v<T, Fvec2>
+			|| std::is_same_v<T, Ivec2>
+			|| std::is_same_v<T, Uvec2>)
+		return 8;
+
+	if (std::is_same_v<T, Fvec3>
+			|| std::is_same_v<T, Ivec3>
+			|| std::is_same_v<T, Uvec3>)
+		return 16;
+
+	if (std::is_same_v<T, Fvec4>
+			|| std::is_same_v<T, Ivec4>
+			|| std::is_same_v<T, Uvec4>)
+		return 16;
+
+	if (std::is_same_v<T, Fmat2>
+			|| std::is_same_v<T, Fmat3>
+			|| std::is_same_v<T, Fmat4>)
+		return 16;
+
+	WIL_UNREACHABLE;
+}
+
+#define WIL_ALIGN_STD140(t) alignas(std140_alignment<t>()) t
+
 }

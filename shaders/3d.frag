@@ -12,6 +12,16 @@ layout(set = 0, binding = 0) uniform GlobalData {
 	vec3 viewPos;
 } uGlobal;
 
+// struct LightData {
+// 	vec3 pos;
+// 	vec3 color;
+// };
+//
+// layout(std140, set = 0, binding = 1) readonly buffer Lights {
+// 	LightData data[];
+// 	uint count;
+// } uLights;
+
 layout(set = 0, binding = 1) uniform Light {
 	vec3 pos;
 	vec3 color;
