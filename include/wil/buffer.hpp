@@ -80,11 +80,39 @@ public:
 
 	UniformBuffer(UniformBuffer &&buffer);
 
+	UniformBuffer &operator=(UniformBuffer &&buffer);
+
     void Update(const void* src);
 
 	VendorPtr GetVkBufferPtr_() const { return buffer_ptr_; }
 
     size_t GetSize() const { return size_; }
+
+private:
+
+	Device *device_;
+
+    VendorPtr buffer_ptr_;
+    VendorPtr memory_ptr_;
+    size_t size_;
+	void *data_;
+};
+
+class StorageBuffer
+{
+public:
+
+	StorageBuffer();
+
+	~StorageBuffer();
+
+	WIL_DELETE_COPY_AND_REASSIGNMENT(StorageBuffer);
+
+	void Update(const void *src);
+
+	VendorPtr GetVkBufferPtr_() const { return buffer_ptr_; }
+
+	size_t GetSize() const { return size_; }
 
 private:
 

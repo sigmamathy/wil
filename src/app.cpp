@@ -142,6 +142,7 @@ void appimpl(App *app, int argc, char **argv)
 
 	WIL_ASSERT(!ctx.scenes_.empty() && "At least one scene are required to be provided");
 	WIL_ASSERT(!ctx.start_scene.empty() && "Start scene needs to be specified");
+	WIL_ASSERT(ctx.frames_in_flight && "Frames in flight must have value >= 1");
 
 	app->frames_in_flight_ = ctx.frames_in_flight;
 

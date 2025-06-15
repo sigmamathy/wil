@@ -246,6 +246,18 @@ UniformBuffer::UniformBuffer(UniformBuffer&& buffer)
 	buffer.buffer_ptr_ = nullptr;
 }
 
+UniformBuffer &UniformBuffer::operator=(UniformBuffer &&buffer)
+{
+	device_ = buffer.device_;
+	buffer_ptr_ = buffer.buffer_ptr_;
+	memory_ptr_ = buffer.memory_ptr_;
+	size_ = buffer.size_;
+	data_ = buffer.data_;
+
+	buffer.buffer_ptr_ = nullptr;
+	return *this;
+}
+
 void UniformBuffer::Update(void const* src)
 {
 	std::memcpy(data_, src, size_);
