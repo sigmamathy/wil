@@ -144,7 +144,7 @@ public:
 		auto i = std::type_index(typeid(T));
 		if (!component_arrays_.count(i))
 			component_arrays_[i]
-				= std::make_unique<ComponentArray<T>>(component_arrays_.size());
+				= std::make_unique<ComponentArray<T>>(static_cast<ComponentType>(component_arrays_.size()));
 	}
 
 	template<class... Ts>

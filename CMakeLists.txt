@@ -27,7 +27,7 @@ add_library(${PROJECT_NAME}
 	"src/render.cpp"
 )
 
-target_include_directories(${PROJECT_NAME} PUBLIC "include" "deps/stb/include" "deps/tinygltf/include")
+target_include_directories(${PROJECT_NAME} PUBLIC "include" "deps/stb/include" "deps/tinygltf/include" ${Vulkan_INCLUDE_DIRS})
 target_link_libraries(${PROJECT_NAME} glfw ${Vulkan_LIBRARIES})
 
 # List of all shaders

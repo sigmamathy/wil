@@ -2,6 +2,7 @@ bin/
 out/
 build/
 .cache/
+.vs/
 compile_commands.json
 mktest
 *.glb
