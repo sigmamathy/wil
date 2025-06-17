@@ -5,6 +5,9 @@
 #include <wil/log.hpp>
 
 using namespace wil::algebra;
+using enum wil::WindowEventType;
+using enum wil::KeyCode;
+using enum wil::MouseButton;
 
 WIL_SCENE_CLASS(GameScene)
 {
@@ -18,7 +21,7 @@ public:
 	GameScene(wil::Device &device) : wil::Scene(device)
 	{
 		SubscribeEvent([this](auto &ev){OnInput(ev);},
-				wil::KEY_EVENT | wil::MOUSE_EVENT | wil::CURSOR_EVENT);
+				KEY_EVENT | MOUSE_EVENT | CURSOR_EVENT);
 
 		for (uint32_t i = 0; i < wil::GetApp().GetFramesInFlight(); ++i)
 			cmdbufs.emplace_back(device);
@@ -68,6 +71,20 @@ public:
 		auto &sync = GetDrawPresentSynchronizer(frame.index);
 		sync.AcquireImageIndex(&frame.image_index);
 
+		auto &win = wil::GetApp().GetWindow();
+		auto &cam = registry.GetSystem<wil::RenderSystem>().GetCamera();
+
+		if (win.IsMouseButtonPressed(MOUSE_BUTTON_MIDDLE))
+		{
+			float val = frame.elapsed * 5.f;
+			if (win.IsKeyPressed(KEY_W)) cam.MoveStraightNoUp(val);
+			if (win.IsKeyPressed(KEY_S)) cam.MoveStraightNoUp(-val);
+			if (win.IsKeyPressed(KEY_D)) cam.MoveSideway(val);
+			if (win.IsKeyPressed(KEY_A)) cam.MoveSideway(-val);
+			if (win.IsKeyPressed(KEY_SPACE)) cam.MoveUp(val);
+			if (win.IsKeyPressed(KEY_LEFT_CONTROL)) cam.MoveUp(-val);
+		}
+
 		Fvec3 light_pos = {5 * cos(frame.app_time), 1.f, 5 * sin(frame.app_time)};
 		registry.GetComponent<wil::TransformComponent>(e4).position = light_pos;
 
@@ -83,19 +100,14 @@ public:
 	void OnInput(wil::WindowEvent &ev)
 	{
 		auto &win = wil::GetApp().GetWindow();
+		auto &cam = registry.GetSystem<wil::RenderSystem>().GetCamera();
 
-		if (ev.type == wil::KEY_EVENT) {
-			if (ev.ke.down && (ev.ke.mods & wil::KEYMOD_SHIFT) && ev.ke.code == wil::KEY_W)
-				WIL_LOGINFO("Crazy");
-		}
-
-		if (ev.type == wil::MOUSE_EVENT && ev.me.button == wil::MOUSE_BUTTON_MIDDLE) {
+		if (ev.type == MOUSE_EVENT && ev.me.button == MOUSE_BUTTON_MIDDLE) {
 			win.SetCursorEnable(!win.IsCursorEnabled());
 		}
 
-		if (win.IsMouseButtonPressed(wil::MOUSE_BUTTON_MIDDLE) && ev.type == wil::CURSOR_EVENT)
+		if (ev.type == CURSOR_EVENT && win.IsMouseButtonPressed(MOUSE_BUTTON_MIDDLE))
 		{
-			auto &cam = registry.GetSystem<wil::RenderSystem>().GetCamera();
 			cam.h_angle += 0.002f * ev.ce.delta.x;
 			cam.v_angle -= 0.002f * ev.ce.delta.y;
 			if (cam.v_angle > 1.57f) cam.v_angle = 1.57f;

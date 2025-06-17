@@ -159,6 +159,13 @@ Ivec2 Window::GetFramebufferSize() const
 	return res;
 }
 
+void Window::SetTitle(const char *title)
+{
+	GLFWwindow* window = static_cast<GLFWwindow*>(window_ptr_);
+	glfwSetWindowTitle(window, title);
+	data_.title = title;
+}
+
 bool Window::IsKeyPressed(KeyCode keycode) const
 {
 	GLFWwindow* window = static_cast<GLFWwindow*>(window_ptr_);

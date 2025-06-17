@@ -27,6 +27,12 @@ struct Camera
 	Fvec3 position;
 	float h_angle;
 	float v_angle;
+
+	void MoveStraight(float val);
+	void MoveStraightNoUp(float val);
+
+	void MoveSideway(float val);
+	void MoveUp(float val);
 };
 
 class RenderSystem : public System

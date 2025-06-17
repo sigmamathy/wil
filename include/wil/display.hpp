@@ -271,6 +271,10 @@ public:
 
 	Ivec2 GetFramebufferSize() const;
 
+	void SetTitle(const char *title);
+
+	std::string_view GetTitle() const { return data_.title; }
+
 	bool IsKeyPressed(KeyCode code) const;
 
 	bool IsMouseButtonPressed(MouseButton button) const;
@@ -301,6 +305,7 @@ private:
 	struct WindowData
 	{
 		WindowEventHandler event_handler;
+		std::string title;
 		bool cursor_enable, cursor_visible;
 		Fvec2 cursor_pos;
 

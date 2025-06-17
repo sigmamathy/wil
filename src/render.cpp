@@ -5,6 +5,44 @@
 
 namespace wil {
 
+void Camera::MoveStraight(float val)
+{
+	Fvec3 ori = {
+		std::sin(h_angle) * std::cos(v_angle),
+		std::sin(v_angle),
+		std::cos(h_angle) * std::cos(v_angle),
+	};
+
+	position += val * ori;
+}
+
+void Camera::MoveStraightNoUp(float val)
+{
+	Fvec3 ori = {
+		std::sin(h_angle),
+		0.f,
+		std::cos(h_angle),
+	};
+
+	position += val * ori;
+}
+
+void Camera::MoveSideway(float val)
+{
+	Fvec3 ori = {
+		std::cos(h_angle),
+		0.f,
+		-std::sin(h_angle),
+	};
+
+	position += val * ori;
+}
+
+void Camera::MoveUp(float val)
+{
+	position.y += val;
+}
+
 RenderSystem::RenderSystem(Registry& registry, Device &device)
 	: System(registry), registry_(registry), device_(device)
 {

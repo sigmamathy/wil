@@ -183,7 +183,7 @@ void appimpl(App *app, int argc, char **argv)
 	while (app->active_) 
 	{
 		auto now = std::chrono::high_resolution_clock::now();
-		frame.elapsed = (prev - now).count();
+		frame.elapsed = std::chrono::duration_cast<std::chrono::duration<float>>(now - prev).count();
 		if (frame.elapsed > 1.f) frame.elapsed = 1.f; // cap the time
 		prev = now;
 		frame.app_time = glfwGetTime();
