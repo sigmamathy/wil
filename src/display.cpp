@@ -18,7 +18,7 @@ static void CreateWindowCallback_(GLFWwindow* window)
         auto& func = GetEventHandler_(win);
         WindowEvent ev;
         ev.type = KEY_EVENT;
-        ev.ke.code = key, ev.ke.down = action;
+        ev.ke.code = key, ev.ke.down = action, ev.ke.mods = mods;
         func(ev);
     });
 

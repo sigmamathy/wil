@@ -81,7 +81,8 @@ public:
 
 	void OnKeyPressed(wil::WindowEvent &ev)
 	{
-		WIL_LOGINFO("Crazy");
+		if (ev.ke.down && (ev.ke.mods & wil::KEYMOD_SHIFT) && ev.ke.code == wil::KEY_W)
+			WIL_LOGINFO("Crazy");
 	}
 };
 
