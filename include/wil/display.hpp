@@ -228,12 +228,25 @@ WIL_ENUM_DEFINE_OR_OPERATOR(WindowEventType);
 
 using WindowEventHandler = std::function<void(WindowEvent&)>;
 
+struct Monitor
+{
+	Ivec2 size;
+	std::string name;
+
+	VendorPtr monitor_ptr_;
+};
+
+const std::vector<Monitor> &GetMonitors();
+
 struct WindowCtor
 {
-	Ivec2 size = {600, 480};
-	std::string title = "";
-	bool resizable = false;
+	Ivec2 size			= {600, 480};
+	std::string title	= "";
+	int monitor			= -1;
+	bool resizable		= false;
 };
+
+#define WIL_MONITOR_SIZE ::wil::Ivec2{-1, -1}
 
 class Window
 {

@@ -92,8 +92,11 @@ public:
 
 	void OnInit(wil::AppInitCtx &ctx) override
 	{
-		ctx.window.size = {1600, 900};
-		ctx.window.title = "My App";
+		// ctx.window.size = {1600, 900};
+		// ctx.window.title = "My App";
+		ctx.window.size = WIL_MONITOR_SIZE;
+		ctx.window.monitor = 0;
+
 		ctx.start_scene = ctx.NewScene<GameScene>();
 	}
 

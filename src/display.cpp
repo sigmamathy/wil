@@ -78,12 +78,49 @@ static void CreateWindowCallback_(GLFWwindow* window)
 	});
 }
 
+const std::vector<Monitor> &GetMonitors()
+{
+	static std::vector<Monitor> monitors;
+	
+	if (monitors.empty())
+	{
+		int count;
+		GLFWmonitor** ms = glfwGetMonitors(&count);
+		monitors.reserve(count);
+
+		for (int i = 0; i < count; i++)
+		{
+			auto* vid = glfwGetVideoMode(ms[i]);
+			monitors.emplace_back(
+				Ivec2(vid->width, vid->height),
+				glfwGetMonitorName(ms[i]),
+				ms[i]
+			);
+		}
+	}
+
+	return monitors;
+}
+
 Window::Window(void *vkinst, const WindowCtor &ctor) : vkinst_(vkinst), event_handler_([](auto&){})
 {
 	glfwWindowHint(GLFW_RESIZABLE, ctor.resizable);
-	GLFWwindow* window = glfwCreateWindow(ctor.size.x, ctor.size.y, ctor.title.c_str(), 0, 0);
+
+	WIL_ASSERT(ctor.size != WIL_MONITOR_SIZE || ctor.monitor >= 0
+			&& "monitor have value >= 0 if WIL_MONITOR_SIZE is used");
+
+	Ivec2 size = ctor.size == WIL_MONITOR_SIZE ? GetMonitors()[ctor.monitor].size : ctor.size;
+
+	GLFWwindow* window = glfwCreateWindow(
+			size.x,
+			size.y,
+			ctor.title.c_str(),
+			ctor.monitor >= 0 ? static_cast<GLFWmonitor*>(GetMonitors()[ctor.monitor].monitor_ptr_) : 0,
+			0);
+
 	if (!window)
 		WIL_LOGFATAL("Unable to create GLFW window");
+
 	window_ptr_ = window;
     glfwSetWindowUserPointer(window, &event_handler_);
     CreateWindowCallback_(window);
