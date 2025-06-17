@@ -22,6 +22,13 @@ struct LightComponent
 	float quadratic;
 };
 
+struct Camera
+{
+	Fvec3 position;
+	float h_angle;
+	float v_angle;
+};
+
 class RenderSystem : public System
 {
 public:
@@ -29,6 +36,8 @@ public:
 	RenderSystem(Registry& registry, Device &device);
 
 	void Render(CommandBuffer &cb, struct FrameData &frame);
+
+	Camera &GetCamera() { return camera_; }
 
 private:
 
@@ -92,6 +101,8 @@ private:
 
 	EntityView objects_;
 	EntityView lights_;
+
+	Camera camera_;
 
 	std::unique_ptr<Pipeline> object_pipeline_;
 	std::unique_ptr<Pipeline> light_pipeline_;

@@ -6,75 +6,77 @@
 
 namespace wil {
 
-static auto& GetEventHandler_(GLFWwindow *win)
+void Window::CreateWindowCallbacks_()
 {
-	return *static_cast<WindowEventHandler*>(glfwGetWindowUserPointer(win));
-}
+	GLFWwindow* window = static_cast<GLFWwindow*>(window_ptr_);
 
-static void CreateWindowCallback_(GLFWwindow* window)
-{
+	static constexpr auto getdata = [](GLFWwindow *win) -> WindowData& {
+		return *static_cast<WindowData*>(glfwGetWindowUserPointer(win)); };
+
     glfwSetKeyCallback(window, [](GLFWwindow* win, int key, int scancode, int action, int mods) -> void {
         if (action == GLFW_REPEAT) return;
-        auto& func = GetEventHandler_(win);
+        auto& data = getdata(win);
         WindowEvent ev;
         ev.type = KEY_EVENT;
         ev.ke.code = key, ev.ke.down = action, ev.ke.mods = mods;
-        func(ev);
+		data.event_handler(ev);
     });
 
     glfwSetMouseButtonCallback(window, [](GLFWwindow* win, int button, int action, int mods) -> void {
-        auto& func = GetEventHandler_(win);
+        auto& data = getdata(win);
         WindowEvent ev;
         ev.type = MOUSE_EVENT;
         ev.me.button = button, ev.me.down = action;
-        func(ev);
+		data.event_handler(ev);
     });
 
     glfwSetCursorPosCallback(window, [](GLFWwindow* win, double xpos, double ypos) -> void {
-        auto& func = GetEventHandler_(win);
+        auto& data = getdata(win);
         WindowEvent ev;
         ev.type = CURSOR_EVENT;
         ev.ce.pos = {xpos, ypos};
-        func(ev);
+		ev.ce.delta = ev.ce.pos - data.cursor_pos;
+		data.cursor_pos = ev.ce.pos;
+		data.event_handler(ev);
     });
 
     glfwSetScrollCallback(window, [](GLFWwindow* win, double xoff, double yoff) -> void {
-        auto& func = GetEventHandler_(win);
+        auto& data = getdata(win);
         WindowEvent ev;
         ev.type = SCROLL_EVENT;
         ev.se.offset = {xoff, yoff};
-        func(ev);
+		data.event_handler(ev);
     });
 
 	glfwSetWindowCloseCallback(window, [](GLFWwindow *win) -> void {
-        auto& func = GetEventHandler_(win);
+        auto& data = getdata(win);
 		WindowEvent ev;
 		ev.type = WINDOW_CLOSE_EVENT;
-        func(ev);
+		data.event_handler(ev);
 	});
 
 	glfwSetFramebufferSizeCallback(window, [](GLFWwindow *win, int width, int height) {
-        auto& func = GetEventHandler_(win);
+        auto& data = getdata(win);
 		WindowEvent ev;
 		ev.type = FRAMEBUFFER_RESIZE_EVENT;
 		ev.fre.size = { width, height };
-		func(ev);
+		data.event_handler(ev);
 	});
 
 	glfwSetWindowPosCallback(window, [](GLFWwindow *win, int x, int y) {
-		auto &func = GetEventHandler_(win);
+        auto& data = getdata(win);
 		WindowEvent ev;
 		ev.type = WINDOW_MOVE_EVENT;
 		ev.wme.pos = {x, y};
-		func(ev);
+		data.event_handler(ev);
 	});
 
 	glfwSetWindowFocusCallback(window, [](GLFWwindow *win, int focused) {
-		auto &func = GetEventHandler_(win);
+        auto& data = getdata(win);
 		WindowEvent ev;
 		ev.type = WINDOW_FOCUS_EVENT;
 		ev.wfe.focused = focused;
-		func(ev);
+		data.event_handler(ev);
 	});
 }
 
@@ -102,7 +104,7 @@ const std::vector<Monitor> &GetMonitors()
 	return monitors;
 }
 
-Window::Window(VendorPtr vkinst, const WindowCtor &ctor) : vkinst_(vkinst), event_handler_([](auto&){})
+Window::Window(VendorPtr vkinst, const WindowCtor &ctor) : vkinst_(vkinst)
 {
 	glfwWindowHint(GLFW_RESIZABLE, ctor.resizable);
 	glfwWindowHint(GLFW_DECORATED, ctor.decorated);
@@ -124,17 +126,19 @@ Window::Window(VendorPtr vkinst, const WindowCtor &ctor) : vkinst_(vkinst), even
 
 	window_ptr_ = window;
 
-	cursor_enable_ = ctor.cursor_enable;
-	cursor_visible_ = ctor.cursor_visible;
-
-	if (!cursor_enable_) glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
-	else if (!cursor_visible_) glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_HIDDEN);
-
 	if (!window)
 		WIL_LOGFATAL("Unable to create GLFW window");
 
-    glfwSetWindowUserPointer(window, &event_handler_);
-    CreateWindowCallback_(window);
+	data_.event_handler = [] (auto&) {};
+	data_.cursor_enable = ctor.cursor_enable;
+	data_.cursor_visible = ctor.cursor_visible;
+	data_.cursor_pos = GetCursorPosition();
+
+	if (!data_.cursor_enable) glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
+	else if (!data_.cursor_visible) glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_HIDDEN);
+
+    glfwSetWindowUserPointer(window, &data_);
+    CreateWindowCallbacks_();
 
 	VkSurfaceKHR surface;
 	if (glfwCreateWindowSurface(static_cast<VkInstance>(vkinst), window, nullptr, &surface) != VK_SUCCESS)
@@ -184,17 +188,18 @@ bool Window::IsFocused() const
 void Window::SetCursorEnable(bool enable)
 {
 	GLFWwindow* window = static_cast<GLFWwindow*>(window_ptr_);
-	cursor_enable_ = enable;
-	if (enable) SetCursorVisible(cursor_visible_);
+	data_.cursor_enable = enable;
+	if (enable) SetCursorVisible(data_.cursor_visible);
 	else glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
 }
 
 void Window::SetCursorVisible(bool visible)
 {
-	cursor_visible_ = visible;
-	if (cursor_enable_) {
+	data_.cursor_visible = visible;
+	if (data_.cursor_enable) {
 		GLFWwindow* window = static_cast<GLFWwindow*>(window_ptr_);
 		glfwSetInputMode(window, GLFW_CURSOR, visible ? GLFW_CURSOR_NORMAL : GLFW_CURSOR_HIDDEN);
+		data_.cursor_pos = GetCursorPosition();
 	}
 }
 

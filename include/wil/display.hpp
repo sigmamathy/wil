@@ -174,6 +174,7 @@ struct MouseEvent
 struct CursorEvent
 {
     Fvec2 pos;
+	Fvec2 delta;
 };
 
 struct ScrollEvent
@@ -266,7 +267,7 @@ public:
 
 	WIL_DELETE_COPY_AND_REASSIGNMENT(Window);
 
-	void SetEventHandler(const WindowEventHandler &handler) { event_handler_ = handler; }
+	void SetEventHandler(const WindowEventHandler &handler) { data_.event_handler = handler; }
 
 	Ivec2 GetFramebufferSize() const;
 
@@ -282,9 +283,9 @@ public:
 
 	void SetCursorVisible(bool visible);
 
-	bool IsCursorEnabled() const { return cursor_enable_; }
+	bool IsCursorEnabled() const { return data_.cursor_enable; }
 
-	bool IsCursorVisible() const { return cursor_visible_; }
+	bool IsCursorVisible() const { return data_.cursor_visible; }
 
 	VendorPtr GetGlfwWindowPtr_() const { return window_ptr_; }
 
@@ -292,11 +293,18 @@ public:
 
 private:
 
+	void CreateWindowCallbacks_();
+
 	VendorPtr vkinst_;
 	VendorPtr window_ptr_, surface_ptr_;
-	WindowEventHandler event_handler_;
 
-	bool cursor_enable_, cursor_visible_;
+	struct WindowData
+	{
+		WindowEventHandler event_handler;
+		bool cursor_enable, cursor_visible;
+		Fvec2 cursor_pos;
+
+	} data_;
 };
 
 }
