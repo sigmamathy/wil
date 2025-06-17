@@ -127,6 +127,7 @@ public:
 		ctx.window.size = WIL_MONITOR_SIZE;
 		ctx.window.monitor = 0;
 
+		ctx.res_directory = "../../res";
 		ctx.start_scene = ctx.NewScene<GameScene>();
 	}
 

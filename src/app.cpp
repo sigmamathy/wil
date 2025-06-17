@@ -15,6 +15,7 @@ namespace wil {
 static App *appinst_;
 static VkInstance vkinstance_;
 static VkDebugUtilsMessengerEXT vkdebug_;
+static std::string res_directory_;
 
 static VKAPI_ATTR VkBool32 VKAPI_CALL
 DebugMessageCallback_(VkDebugUtilsMessageSeverityFlagBitsEXT severity,
@@ -132,6 +133,11 @@ App &GetApp() {
 	return *appinst_;
 }
 
+std::string GetResource(const std::string &path)
+{
+	return res_directory_ + path;
+}
+
 void appimpl(App *app, int argc, char **argv)
 {
 	appinst_ = app;
@@ -139,6 +145,9 @@ void appimpl(App *app, int argc, char **argv)
 
 	AppInitCtx ctx;
 	app->OnInit(ctx);
+
+	if (ctx.res_directory.back() != '/') ctx.res_directory += '/';
+	res_directory_ = ctx.res_directory;
 
 	WIL_ASSERT(!ctx.scenes_.empty() && "At least one scene are required to be provided");
 	WIL_ASSERT(!ctx.start_scene.empty() && "Start scene needs to be specified");

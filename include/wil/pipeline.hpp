@@ -56,8 +56,8 @@ struct DescriptorSetLayout
 struct PipelineCtor
 {
 	Device *device;
-	char const *vertex_shader;
-	char const *fragment_shader;
+	std::string vertex_shader;
+	std::string fragment_shader;
 
 	std::vector<VertexAttribLayout> vertex_layout;
 	uint32_t vertex_stride;

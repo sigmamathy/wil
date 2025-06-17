@@ -89,8 +89,8 @@ void RenderSystem::CreatePipelines_(Device &device)
 	PipelineCtor octor;
 	octor.device = &device;
 
-	octor.vertex_shader = "../shaders/3d.vert.spv";
-	octor.fragment_shader = "../shaders/3d.frag.spv";
+	octor.vertex_shader = GetResource("wil/shaders/3d.vert.spv");
+	octor.fragment_shader = GetResource("wil/shaders/3d.frag.spv");
 
 	octor.vertex_layout.push_back(wilvrta(0, ObjectVertex, pos));
 	octor.vertex_layout.push_back(wilvrta(1, ObjectVertex, texcoord));
@@ -110,8 +110,8 @@ void RenderSystem::CreatePipelines_(Device &device)
 	PipelineCtor lctor;
 	lctor.device = &device;
 
-	lctor.vertex_shader = "../shaders/light3d.vert.spv";
-	lctor.fragment_shader = "../shaders/light3d.frag.spv";
+	lctor.vertex_shader = GetResource("wil/shaders/light3d.vert.spv");
+	lctor.fragment_shader = GetResource("wil/shaders/light3d.frag.spv");
 
 	lctor.vertex_layout.push_back(wilvrta(0, LightVertex, pos));
 	lctor.vertex_stride = sizeof(LightVertex);

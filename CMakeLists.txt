@@ -8,10 +8,12 @@ find_package(glfw3 REQUIRED)
 find_package(Vulkan REQUIRED)
 
 add_library(${PROJECT_NAME}
+
 	"deps/stb/src/stb_image.c"
 	"deps/stb/src/stb_image_write.c"
 	"deps/stb/src/stb_truetype.c"
 	"deps/tinygltf/src/tiny_gltf.cc"
+
 	"src/app.cpp"
 	"src/log.cpp"
 	"src/display.cpp"
@@ -30,6 +32,9 @@ add_library(${PROJECT_NAME}
 target_include_directories(${PROJECT_NAME} PUBLIC "include" "deps/stb/include" "deps/tinygltf/include" ${Vulkan_INCLUDE_DIRS})
 target_link_libraries(${PROJECT_NAME} glfw ${Vulkan_LIBRARIES})
 
+set(WIL_SHADER_SRC_DIRECTORY "${PROJECT_SOURCE_DIR}/shaders")
+set(WIL_RES_DIRECTORY "${PROJECT_SOURCE_DIR}/res")
+
 # List of all shaders
 set(SHADER_SOURCES
     "3d.vert"
@@ -42,16 +47,18 @@ if (NOT EXISTS "${CMAKE_BINARY_DIR}/shaders")
     file(MAKE_DIRECTORY "${CMAKE_BINARY_DIR}/shaders")
 endif()
 
+file(MAKE_DIRECTORY "${WIL_RES_DIRECTORY}/wil/shaders")
+
 # Compile all shaders using glslc upon each build
 set(SHADER_TARGET_INDEX 0)
 foreach(SHADER ${SHADER_SOURCES})
-	add_custom_command(OUTPUT "${CMAKE_BINARY_DIR}/shaders/${SHADER}.spv"
-        COMMAND glslc "${PROJECT_SOURCE_DIR}/shaders/${SHADER}" -o "${CMAKE_BINARY_DIR}/shaders/${SHADER}.spv"
-		DEPENDS "${PROJECT_SOURCE_DIR}/shaders/${SHADER}"
+	add_custom_command(OUTPUT "${WIL_RES_DIRECTORY}/wil/shaders/${SHADER}.spv"
+		COMMAND glslc "${WIL_SHADER_SRC_DIRECTORY}/${SHADER}" -o "${WIL_RES_DIRECTORY}/wil/shaders/${SHADER}.spv"
+		DEPENDS "${WIL_SHADER_SRC_DIRECTORY}/${SHADER}"
         COMMENT "Compile shader module ${SHADER}"
 	)
 	add_custom_target("shader_build_${SHADER_TARGET_INDEX}" ALL
-		DEPENDS "${CMAKE_BINARY_DIR}/shaders/${SHADER}.spv"
+		DEPENDS "${WIL_RES_DIRECTORY}/wil/shaders/${SHADER}.spv"
     )
     add_dependencies(${PROJECT_NAME} "shader_build_${SHADER_TARGET_INDEX}")
     math(EXPR SHADER_TARGET_INDEX "${SHADER_TARGET_INDEX} + 1")

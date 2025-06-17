@@ -15,6 +15,7 @@ struct AppInitCtx
 	uint32_t frames_in_flight = 2;
 	bool vsync = true;
 	std::string start_scene;
+	std::string res_directory;
 
 	template<class T, class... Ts>
 	std::string_view NewScene(Ts&&... args) {
@@ -71,5 +72,7 @@ private:
 };
 
 App& GetApp();
+
+std::string GetResource(const std::string &path);
 
 }

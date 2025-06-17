@@ -62,8 +62,8 @@ Pipeline::Pipeline(const PipelineCtor &ctor) : device_(*ctor.device), descriptor
 {
 	VkDevice device = static_cast<VkDevice>(ctor.device->GetVkDevicePtr_());
 
-	VkShaderModule vert = CreateShaderModule_(device, ctor.vertex_shader);
-	VkShaderModule frag = CreateShaderModule_(device, ctor.fragment_shader);
+	VkShaderModule vert = CreateShaderModule_(device, ctor.vertex_shader.c_str());
+	VkShaderModule frag = CreateShaderModule_(device, ctor.fragment_shader.c_str());
 
 	VkPipelineShaderStageCreateInfo shader_stages_ci[] = { {}, {} };
 
