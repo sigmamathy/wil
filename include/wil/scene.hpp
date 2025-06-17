@@ -27,11 +27,18 @@ public:
 		return *syncs_[frame_index];
 	}
 
+	void HandleEvent(WindowEvent &ev);
+
+	void SubscribeEvent(const WindowEventHandler &handler, WindowEventType filter) {
+		event_subscriptions_.emplace_back(std::make_pair(filter, handler));
+	}
+
 	virtual bool Update(struct FrameData &frame) = 0;
 
 private:
 
 	std::vector<DrawPresentSynchronizer*> syncs_;
+	std::vector<std::pair<WindowEventType, WindowEventHandler>> event_subscriptions_;
 
 };
 

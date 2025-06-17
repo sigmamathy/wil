@@ -17,7 +17,7 @@ static void CreateWindowCallback_(GLFWwindow* window)
         if (action == GLFW_REPEAT) return;
         auto& func = GetEventHandler_(win);
         WindowEvent ev;
-        ev.type = WindowEvent::KEY_EVENT;
+        ev.type = KEY_EVENT;
         ev.ke.code = key, ev.ke.down = action;
         func(ev);
     });
@@ -25,7 +25,7 @@ static void CreateWindowCallback_(GLFWwindow* window)
     glfwSetMouseButtonCallback(window, [](GLFWwindow* win, int button, int action, int mods) -> void {
         auto& func = GetEventHandler_(win);
         WindowEvent ev;
-        ev.type = WindowEvent::MOUSE_EVENT;
+        ev.type = MOUSE_EVENT;
         ev.me.button = button, ev.me.down = action;
         func(ev);
     });
@@ -33,7 +33,7 @@ static void CreateWindowCallback_(GLFWwindow* window)
     glfwSetCursorPosCallback(window, [](GLFWwindow* win, double xpos, double ypos) -> void {
         auto& func = GetEventHandler_(win);
         WindowEvent ev;
-        ev.type = WindowEvent::CURSOR_EVENT;
+        ev.type = CURSOR_EVENT;
         ev.ce.pos = {xpos, ypos};
         func(ev);
     });
@@ -41,7 +41,7 @@ static void CreateWindowCallback_(GLFWwindow* window)
     glfwSetScrollCallback(window, [](GLFWwindow* win, double xoff, double yoff) -> void {
         auto& func = GetEventHandler_(win);
         WindowEvent ev;
-        ev.type = WindowEvent::SCROLL_EVENT;
+        ev.type = SCROLL_EVENT;
         ev.se.offset = {xoff, yoff};
         func(ev);
     });
@@ -49,15 +49,31 @@ static void CreateWindowCallback_(GLFWwindow* window)
 	glfwSetWindowCloseCallback(window, [](GLFWwindow *win) -> void {
         auto& func = GetEventHandler_(win);
 		WindowEvent ev;
-		ev.type = ev.WINDOW_CLOSE_EVENT;
+		ev.type = WINDOW_CLOSE_EVENT;
         func(ev);
 	});
 
 	glfwSetFramebufferSizeCallback(window, [](GLFWwindow *win, int width, int height) {
         auto& func = GetEventHandler_(win);
 		WindowEvent ev;
-		ev.type = ev.FRAMEBUFFER_RESIZE_EVENT;
+		ev.type = FRAMEBUFFER_RESIZE_EVENT;
 		ev.fre.size = { width, height };
+		func(ev);
+	});
+
+	glfwSetWindowPosCallback(window, [](GLFWwindow *win, int x, int y) {
+		auto &func = GetEventHandler_(win);
+		WindowEvent ev;
+		ev.type = WINDOW_MOVE_EVENT;
+		ev.wme.pos = {x, y};
+		func(ev);
+	});
+
+	glfwSetWindowFocusCallback(window, [](GLFWwindow *win, int focused) {
+		auto &func = GetEventHandler_(win);
+		WindowEvent ev;
+		ev.type = WINDOW_FOCUS_EVENT;
+		ev.wfe.focused = focused;
 		func(ev);
 	});
 }

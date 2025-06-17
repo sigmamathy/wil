@@ -17,4 +17,12 @@ Scene::~Scene()
 		delete sync;
 }
 
+void Scene::HandleEvent(WindowEvent &ev)
+{
+	for (auto &[type, fn] : event_subscriptions_) {
+		if (ev.type & type)
+			fn(ev);
+	}
+}
+
 }

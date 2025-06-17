@@ -155,11 +155,16 @@ void appimpl(App *app, int argc, char **argv)
 
 	bool framebuffer_resized = false;
 
-	window.SetEventHandler([&](WindowEvent &ev) {
-		if (ctx.close_button_op && ev.type == ev.WINDOW_CLOSE_EVENT)
+	window.SetEventHandler([&](WindowEvent &ev)
+	{
+		if (ctx.close_button_op && ev.type == WINDOW_CLOSE_EVENT)
 			app->active_ = false;
-		if (ev.type == ev.FRAMEBUFFER_RESIZE_EVENT)
+
+		if (ev.type == FRAMEBUFFER_RESIZE_EVENT)
 			framebuffer_resized = true;
+
+		app->current_scene_->HandleEvent(ev);
+
 		app->OnWindowEvent(ev);
 	});
 

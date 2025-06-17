@@ -34,6 +34,28 @@ struct FramebufferResizeEvent
 	Ivec2 size;
 };
 
+struct WindowMoveEvent
+{
+	Ivec2 pos;
+};
+
+struct WindowFocusEvent
+{
+	bool focused;
+};
+
+enum WindowEventType
+{
+	KEY_EVENT					= 0x1,
+	MOUSE_EVENT					= 0x2,
+	CURSOR_EVENT				= 0x4,
+	SCROLL_EVENT				= 0x8,
+	WINDOW_CLOSE_EVENT			= 0x10,
+	FRAMEBUFFER_RESIZE_EVENT	= 0x20,
+	WINDOW_MOVE_EVENT			= 0x40,
+	WINDOW_FOCUS_EVENT			= 0x80,
+};
+
 struct WindowEvent
 {
     union
@@ -43,18 +65,14 @@ struct WindowEvent
         CursorEvent ce;
         ScrollEvent se;
 		FramebufferResizeEvent fre;
+		WindowMoveEvent wme;
+		WindowFocusEvent wfe;
     };
 
-    enum EventType
-    {
-        KEY_EVENT,
-        MOUSE_EVENT,
-        CURSOR_EVENT,
-        SCROLL_EVENT,
-		WINDOW_CLOSE_EVENT,
-		FRAMEBUFFER_RESIZE_EVENT,
-    } type;
+	WindowEventType type;
 };
+
+WIL_ENUM_DEFINE_OR_OPERATOR(WindowEventType);
 
 using WindowEventHandler = std::function<void(WindowEvent&)>;
 
