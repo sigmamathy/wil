@@ -17,7 +17,7 @@ public:
 
 	GameScene(wil::Device &device) : wil::Scene(device)
 	{
-		SubscribeEvent([this](auto &ev){OnKeyPressed(ev);}, wil::KEY_EVENT);
+		SubscribeEvent([this](auto &ev){OnInput(ev);}, wil::KEY_EVENT | wil::MOUSE_EVENT);
 
 		for (uint32_t i = 0; i < wil::GetApp().GetFramesInFlight(); ++i)
 			cmdbufs.emplace_back(device);
@@ -79,10 +79,17 @@ public:
 		return true;
 	}
 
-	void OnKeyPressed(wil::WindowEvent &ev)
+	void OnInput(wil::WindowEvent &ev)
 	{
-		if (ev.ke.down && (ev.ke.mods & wil::KEYMOD_SHIFT) && ev.ke.code == wil::KEY_W)
-			WIL_LOGINFO("Crazy");
+		if (ev.type == wil::KEY_EVENT) {
+			if (ev.ke.down && (ev.ke.mods & wil::KEYMOD_SHIFT) && ev.ke.code == wil::KEY_W)
+				WIL_LOGINFO("Crazy");
+		}
+
+		if (ev.type == wil::MOUSE_EVENT && ev.me.button == wil::MOUSE_BUTTON_MIDDLE) {
+			auto &win = wil::GetApp().GetWindow();
+			win.SetCursorEnable(!win.IsCursorEnabled());
+		}
 	}
 };
 

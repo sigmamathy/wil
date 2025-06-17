@@ -173,7 +173,7 @@ struct MouseEvent
 
 struct CursorEvent
 {
-    Ivec2 pos;
+    Fvec2 pos;
 };
 
 struct ScrollEvent
@@ -243,7 +243,15 @@ struct WindowCtor
 	Ivec2 size			= {600, 480};
 	std::string title	= "";
 	int monitor			= -1;
+
+	bool cursor_enable	= true;
+	bool cursor_visible	= true;
+
 	bool resizable		= false;
+	bool decorated		= true;
+	bool auto_iconify	= true;
+	bool always_on_top	= false;
+	bool maximized		= false;
 };
 
 #define WIL_MONITOR_SIZE ::wil::Ivec2{-1, -1}
@@ -252,7 +260,7 @@ class Window
 {
 public:
 
-	Window(void *vkinst, const WindowCtor &ctor);
+	Window(VendorPtr vkinst, const WindowCtor &ctor);
 
 	~Window();
 
@@ -262,14 +270,33 @@ public:
 
 	Ivec2 GetFramebufferSize() const;
 
-	VendorPtr GetGlfwWindowPtr_() { return window_ptr_; }
+	bool IsKeyPressed(KeyCode code) const;
 
-	VendorPtr GetVkSurfacePtr_() { return surface_ptr_; }
+	bool IsMouseButtonPressed(MouseButton button) const;
+
+	Fvec2 GetCursorPosition() const;
+
+	bool IsFocused() const;
+
+	void SetCursorEnable(bool enable);
+
+	void SetCursorVisible(bool visible);
+
+	bool IsCursorEnabled() const { return cursor_enable_; }
+
+	bool IsCursorVisible() const { return cursor_visible_; }
+
+	VendorPtr GetGlfwWindowPtr_() const { return window_ptr_; }
+
+	VendorPtr GetVkSurfacePtr_() const { return surface_ptr_; }
 
 private:
+
 	VendorPtr vkinst_;
 	VendorPtr window_ptr_, surface_ptr_;
 	WindowEventHandler event_handler_;
+
+	bool cursor_enable_, cursor_visible_;
 };
 
 }

@@ -102,9 +102,13 @@ const std::vector<Monitor> &GetMonitors()
 	return monitors;
 }
 
-Window::Window(void *vkinst, const WindowCtor &ctor) : vkinst_(vkinst), event_handler_([](auto&){})
+Window::Window(VendorPtr vkinst, const WindowCtor &ctor) : vkinst_(vkinst), event_handler_([](auto&){})
 {
 	glfwWindowHint(GLFW_RESIZABLE, ctor.resizable);
+	glfwWindowHint(GLFW_DECORATED, ctor.decorated);
+	glfwWindowHint(GLFW_AUTO_ICONIFY, ctor.auto_iconify);
+	glfwWindowHint(GLFW_FLOATING, ctor.always_on_top);
+	glfwWindowHint(GLFW_MAXIMIZED, ctor.maximized);
 
 	WIL_ASSERT(ctor.size != WIL_MONITOR_SIZE || ctor.monitor >= 0
 			&& "monitor have value >= 0 if WIL_MONITOR_SIZE is used");
@@ -118,10 +122,17 @@ Window::Window(void *vkinst, const WindowCtor &ctor) : vkinst_(vkinst), event_ha
 			ctor.monitor >= 0 ? static_cast<GLFWmonitor*>(GetMonitors()[ctor.monitor].monitor_ptr_) : 0,
 			0);
 
+	window_ptr_ = window;
+
+	cursor_enable_ = ctor.cursor_enable;
+	cursor_visible_ = ctor.cursor_visible;
+
+	if (!cursor_enable_) glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
+	else if (!cursor_visible_) glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_HIDDEN);
+
 	if (!window)
 		WIL_LOGFATAL("Unable to create GLFW window");
 
-	window_ptr_ = window;
     glfwSetWindowUserPointer(window, &event_handler_);
     CreateWindowCallback_(window);
 
@@ -142,6 +153,49 @@ Ivec2 Window::GetFramebufferSize() const
 	Ivec2 res;
 	glfwGetFramebufferSize(static_cast<GLFWwindow*>(window_ptr_), &res.x, &res.y);
 	return res;
+}
+
+bool Window::IsKeyPressed(KeyCode keycode) const
+{
+	GLFWwindow* window = static_cast<GLFWwindow*>(window_ptr_);
+	return glfwGetKey(window, keycode) == GLFW_PRESS;
+}
+
+bool Window::IsMouseButtonPressed(MouseButton button) const
+{
+	GLFWwindow* window = static_cast<GLFWwindow*>(window_ptr_);
+	return glfwGetMouseButton(window, button) == GLFW_PRESS;
+}
+
+Fvec2 Window::GetCursorPosition() const
+{
+	GLFWwindow* window = static_cast<GLFWwindow*>(window_ptr_);
+	double x, y;
+	glfwGetCursorPos(window, &x, &y);
+	return { x, y };
+}
+
+bool Window::IsFocused() const
+{
+	GLFWwindow* window = static_cast<GLFWwindow*>(window_ptr_);
+	return glfwGetWindowAttrib(window, GLFW_FOCUSED);
+}
+
+void Window::SetCursorEnable(bool enable)
+{
+	GLFWwindow* window = static_cast<GLFWwindow*>(window_ptr_);
+	cursor_enable_ = enable;
+	if (enable) SetCursorVisible(cursor_visible_);
+	else glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
+}
+
+void Window::SetCursorVisible(bool visible)
+{
+	cursor_visible_ = visible;
+	if (cursor_enable_) {
+		GLFWwindow* window = static_cast<GLFWwindow*>(window_ptr_);
+		glfwSetInputMode(window, GLFW_CURSOR, visible ? GLFW_CURSOR_NORMAL : GLFW_CURSOR_HIDDEN);
+	}
 }
 
 }
