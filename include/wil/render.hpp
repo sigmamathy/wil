@@ -77,7 +77,13 @@ private:
 		WIL_ALIGN_STD140(Fvec3) view_pos;
 	};
 
-	struct ObjectLightData
+	struct ObjectDirectionalLight
+	{
+		WIL_ALIGN_STD140(Fvec3) dir;
+		WIL_ALIGN_STD140(Fvec3) color;
+	};
+
+	struct ObjectPointLight
 	{
 		WIL_ALIGN_STD140(Fvec3) pos;
 		WIL_ALIGN_STD140(Fvec3) color;
@@ -88,7 +94,9 @@ private:
 	struct ObjectStorage_0_1
 	{
 		static constexpr unsigned MAX_COUNT = 100;
-		ObjectLightData data[MAX_COUNT];
+
+		ObjectDirectionalLight directional;
+		ObjectPointLight points[MAX_COUNT];
 		WIL_ALIGN_STD140(unsigned) count;
 	};
 

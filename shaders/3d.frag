@@ -12,16 +12,21 @@ layout(set = 0, binding = 0) uniform GlobalData {
 	vec3 viewPos;
 } uGlobal;
 
-struct LightData {
+struct DirectionalLight {
+	vec3 dir;
+	vec3 color;
+};
+
+struct PointLight {
 	vec3 pos;
 	vec3 color;
-
 	float linear;
 	float quadratic;
 };
 
 layout(std140, set = 0, binding = 1) readonly buffer Lights {
-	LightData data[100];
+	DirectionalLight dl;
+	PointLight pl[100];
 	uint count;
 } uLights;
 
@@ -30,33 +35,52 @@ layout(set = 1, binding = 0) uniform sampler2D uTexSampler;
 const float ambient_strength = 0.02f;
 const float specular_strength = 0.5f;
 
-vec3 calculate_light(LightData data)
+vec3 calculate_dir_light(DirectionalLight light)
 {
 	vec3 norm = normalize(vNormal);
-	vec3 lightDir = normalize(data.pos - vFragPos);  
+	vec3 lightDir = normalize(light.dir);  
 
 	vec3 viewDir = normalize(uGlobal.viewPos - vFragPos);
 	vec3 reflectDir = reflect(-lightDir, norm);
 
-	vec3 ambient = ambient_strength * data.color;
-	vec3 diffuse = max(dot(norm, lightDir), 0.0) * data.color;
+	vec3 ambient = ambient_strength * light.color;
+	vec3 diffuse = max(dot(norm, lightDir), 0.0) * light.color;
 
 	float spec = pow(max(dot(viewDir, reflectDir), 0.0), 32);
-	vec3 specular = specular_strength * spec * data.color;
+	vec3 specular = specular_strength * spec * light.color;
 
-	float dist = length(data.pos - vFragPos);
-	float attenuation = 1.0 / (1.0 + data.linear * dist + 
-			data.quadratic * (dist * dist));  
+	return ambient + diffuse + specular;
+}
+
+vec3 calculate_point_lights(PointLight light)
+{
+	vec3 norm = normalize(vNormal);
+	vec3 lightDir = normalize(light.pos - vFragPos);  
+
+	vec3 viewDir = normalize(uGlobal.viewPos - vFragPos);
+	vec3 reflectDir = reflect(-lightDir, norm);
+
+	vec3 ambient = ambient_strength * light.color;
+	vec3 diffuse = max(dot(norm, lightDir), 0.0) * light.color;
+
+	float spec = pow(max(dot(viewDir, reflectDir), 0.0), 32);
+	vec3 specular = specular_strength * spec * light.color;
+
+	float dist = length(light.pos - vFragPos);
+	float attenuation = 1.0 / (1.0 + light.linear * dist + 
+			light.quadratic * (dist * dist));  
 
 	return attenuation * (ambient + diffuse + specular);
 }
 
 void main()
 {
-	vec3 light_color = vec3(0.f,0.f,0.f);
+	vec3 light = vec3(0.f);
+
+	light += calculate_dir_light(uLights.dl);
 
 	for (uint i = 0; i < uLights.count; ++i)
-		light_color += calculate_light(uLights.data[i]);
+		light += calculate_point_lights(uLights.pl[i]);
 
-	oFragColor = vec4(light_color, 1.f) * texture(uTexSampler, vTexCoord);
+	oFragColor = vec4(light, 1.f) * texture(uTexSampler, vTexCoord);
 }

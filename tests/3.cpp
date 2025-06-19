@@ -47,12 +47,12 @@ public:
 		registry.AddComponents(e2, tc, mc);
 
 		wil::LightComponent lc = {
-			{1.f, 1.f, 1.f},
+			{0.f, 1.f, 0.f},
 			0.22f,
 			0.20f
 		};
 
-		tc.position = {0.f, 3.f, 0.f};
+		tc.position = {0.f, -1.f, 0.f};
 		tc.size = {1.f,1.f,1.f};
 
 		auto e3 = registry.CreateEntity();
@@ -122,10 +122,10 @@ public:
 
 	void OnInit(wil::AppInitCtx &ctx) override
 	{
-		// ctx.window.size = {1600, 900};
-		// ctx.window.title = "My App";
-		ctx.window.size = WIL_MONITOR_SIZE;
-		ctx.window.monitor = 0;
+		ctx.window.size = {1600, 900};
+		ctx.window.title = "My App";
+		// ctx.window.size = WIL_MONITOR_SIZE;
+		// ctx.window.monitor = 0;
 
 		ctx.res_directory = "../../res";
 		ctx.start_scene = ctx.NewScene<GameScene>();

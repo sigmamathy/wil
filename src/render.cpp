@@ -186,6 +186,9 @@ void RenderSystem::Render(CommandBuffer &cb, FrameData &frame)
 		ObjectStorage_0_1 obj01;
 		obj01.count = 0;
 
+		obj01.directional.dir = Fvec3(0, 1, 0);
+		obj01.directional.color = Fvec3(1.f);
+
 		cmd.BindPipeline(*light_pipeline_);
 
 		wil::DescriptorSet lsets[] = { light_0_sets[frame.index] };
@@ -206,7 +209,7 @@ void RenderSystem::Render(CommandBuffer &cb, FrameData &frame)
 				cmd.BindIndexBuffer(cube_ibo);
 				cmd.DrawIndexed(36, 1);
 
-				obj01.data[obj01.count++] = ObjectLightData {
+				obj01.points[obj01.count++] = ObjectPointLight {
 					.pos = tc.position,
 					.color = lc.color,
 					.linear = lc.linear,
