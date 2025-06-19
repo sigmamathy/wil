@@ -184,7 +184,7 @@ void RenderSystem::Render(CommandBuffer &cb, FrameData &frame)
 		cmd.SetScissor({0, 0}, size);
 
 		ObjectStorage_0_1 obj01;
-		obj01.count = 0;
+		obj01.pl_count = 0, obj01.sl_count = 0;
 
 		obj01.directional.dir = Fvec3(0, 1, 0);
 		obj01.directional.color = Fvec3(1.f);
@@ -209,7 +209,7 @@ void RenderSystem::Render(CommandBuffer &cb, FrameData &frame)
 				cmd.BindIndexBuffer(cube_ibo);
 				cmd.DrawIndexed(36, 1);
 
-				obj01.points[obj01.count++] = ObjectPointLight {
+				obj01.points[obj01.pl_count++] = ObjectPointLight {
 					.pos = tc.position,
 					.color = lc.color,
 					.linear = lc.linear,

@@ -91,13 +91,25 @@ private:
 		WIL_ALIGN_STD140(float) quadratic;
 	};
 
+	struct ObjectSpotLight
+	{
+		WIL_ALIGN_STD140(Fvec3) pos;
+		WIL_ALIGN_STD140(Fvec3) dir;
+		WIL_ALIGN_STD140(Fvec3) color;
+		WIL_ALIGN_STD140(float) cutoff;
+		WIL_ALIGN_STD140(float) linear;
+		WIL_ALIGN_STD140(float) quadratic;
+	};
+
 	struct ObjectStorage_0_1
 	{
 		static constexpr unsigned MAX_COUNT = 100;
 
 		ObjectDirectionalLight directional;
 		ObjectPointLight points[MAX_COUNT];
-		WIL_ALIGN_STD140(unsigned) count;
+		ObjectSpotLight spots[MAX_COUNT];
+		WIL_ALIGN_STD140(unsigned) pl_count;
+		WIL_ALIGN_STD140(unsigned) sl_count;
 	};
 
 	struct LightUniform_0_0
