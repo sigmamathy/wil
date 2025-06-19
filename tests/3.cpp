@@ -28,7 +28,7 @@ public:
 		registry.RegisterSystem<wil::RenderSystem>(device);
 
 		wil::TransformComponent tc = {
-			{-2, 0, 0},
+			{0, 0, 0},
 			{0.01f, 0.01f, 0.01f},
 			{0, 1, 0},
 			0.f
@@ -46,7 +46,7 @@ public:
 		auto e2 = registry.CreateEntity();
 		registry.AddComponents(e2, tc, mc);
 
-		wil::LightComponent lc = {
+		wil::PointLightComponent lc = {
 			{0.f, 1.f, 0.f},
 			0.22f,
 			0.20f
@@ -64,6 +64,18 @@ public:
 		e4 = registry.CreateEntity();
 		registry.AddComponents(e4, tc, lc);
 
+		wil::SpotLightComponent slc = {
+			{1.f, 0.f, 1.f},
+			{0.f, -1.f, 0.f},
+			std::cos(wil::Radians(10.f)),
+			// 2.f,
+			0.22f, 0.2f
+		};
+
+		tc.position = {0.f, 4.f, 0.f};
+
+		auto e5 = registry.CreateEntity();
+		registry.AddComponents(e5, tc, slc);
 	}
 
 	bool Update(wil::FrameData &frame) override

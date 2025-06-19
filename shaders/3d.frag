@@ -97,7 +97,7 @@ vec3 calculate_spot_lights(SpotLight light)
 	float attenuation = 1.0 / (1.0 + light.linear * dist + 
 			light.quadratic * (dist * dist));
 
-	if (theta > light.cutoff) {
+	if (theta < light.cutoff) {
 		return attenuation * ambient;
 	}
 
@@ -116,7 +116,7 @@ void main()
 {
 	vec3 light = vec3(0.f);
 
-	light += calculate_dir_light(uLights.dl);
+	// light += calculate_dir_light(uLights.dl);
 
 	for (uint i = 0; i < uLights.pl_count; ++i)
 		light += calculate_point_lights(uLights.pl[i]);

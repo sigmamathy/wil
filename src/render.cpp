@@ -47,7 +47,8 @@ RenderSystem::RenderSystem(Registry& registry, Device &device)
 	: System(registry), registry_(registry), device_(device)
 {
 	registry.RegisterEntityView<TransformComponent, ModelComponent>(objects_);
-	registry.RegisterEntityView<LightComponent>(lights_);
+	registry.RegisterEntityView<TransformComponent, PointLightComponent>(point_lights_);
+	registry.RegisterEntityView<TransformComponent, SpotLightComponent>(spot_lights_);
 
 	CreatePipelines_(device);
 	CreateDescriptorSetsAndUniforms_(device);
@@ -194,28 +195,48 @@ void RenderSystem::Render(CommandBuffer &cb, FrameData &frame)
 		wil::DescriptorSet lsets[] = { light_0_sets[frame.index] };
 		cmd.BindDescriptorSets(*light_pipeline_, 0, lsets, 1);
 
-		for (Entity e : lights_.set)
+		for (Entity e : point_lights_.set)
 		{
-			if (registry_.HasComponents<TransformComponent>(e))
-			{
-				auto [tc, lc] = registry_.GetComponents<TransformComponent,LightComponent>(e);
+			auto [tc, lc] = registry_.GetComponents<TransformComponent,PointLightComponent>(e);
 
-				LightPushConstant push;
-				push.model = wil::TranslateModel(tc.position);
-				push.light_color = lc.color;
+			LightPushConstant push;
+			push.model = wil::TranslateModel(tc.position);
+			push.light_color = lc.color;
 
-				cmd.PushConstant(*light_pipeline_, &push);
-				cmd.BindVertexBuffer(cube_vbo);
-				cmd.BindIndexBuffer(cube_ibo);
-				cmd.DrawIndexed(36, 1);
+			cmd.PushConstant(*light_pipeline_, &push);
+			cmd.BindVertexBuffer(cube_vbo);
+			cmd.BindIndexBuffer(cube_ibo);
+			cmd.DrawIndexed(36, 1);
 
-				obj01.points[obj01.pl_count++] = ObjectPointLight {
-					.pos = tc.position,
-					.color = lc.color,
-					.linear = lc.linear,
-					.quadratic = lc.quadratic,
-				};
-			}
+			obj01.points[obj01.pl_count++] = ObjectPointLight {
+				.pos = tc.position,
+				.color = lc.color,
+				.linear = lc.linear,
+				.quadratic = lc.quadratic,
+			};
+		}
+
+		for (Entity e : spot_lights_.set)
+		{
+			auto [tc, lc] = registry_.GetComponents<TransformComponent,SpotLightComponent>(e);
+
+			LightPushConstant push;
+			push.model = wil::TranslateModel(tc.position);
+			push.light_color = lc.color;
+
+			cmd.PushConstant(*light_pipeline_, &push);
+			cmd.BindVertexBuffer(cube_vbo);
+			cmd.BindIndexBuffer(cube_ibo);
+			cmd.DrawIndexed(36, 1);
+
+			obj01.spots[obj01.sl_count++] = ObjectSpotLight {
+				.pos = tc.position,
+				.dir = lc.dir,
+				.color = lc.color,
+				.cutoff = lc.cutoff,
+				.linear = lc.linear,
+				.quadratic = lc.quadratic,
+			};
 		}
 
 		object_0_1_storages[frame.index].Update(&obj01);

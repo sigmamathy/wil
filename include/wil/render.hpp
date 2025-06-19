@@ -15,9 +15,18 @@ struct ModelComponent
 	uint32_t texture_index;
 };
 
-struct LightComponent
+struct PointLightComponent
 {
 	Fvec3 color;
+	float linear;
+	float quadratic;
+};
+
+struct SpotLightComponent
+{
+	Fvec3 color;
+	Fvec3 dir;
+	float cutoff;
 	float linear;
 	float quadratic;
 };
@@ -126,7 +135,7 @@ private:
 	Device &device_;
 
 	EntityView objects_;
-	EntityView lights_;
+	EntityView point_lights_, spot_lights_;
 
 	Camera camera_;
 

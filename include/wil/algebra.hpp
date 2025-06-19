@@ -6,6 +6,10 @@
 
 namespace wil {
 
+constexpr float Radians(float deg) {
+	return deg / 180.f * 3.1415927f;
+}
+
 // mathematical vectors
 template<class T, unsigned Dim>
 class Vector
