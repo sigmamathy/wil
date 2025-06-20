@@ -9,6 +9,13 @@ find_package(Vulkan REQUIRED)
 
 add_library(${PROJECT_NAME}
 
+	"deps/imgui/src/imgui.cpp"
+	"deps/imgui/src/imgui_demo.cpp"
+	"deps/imgui/src/imgui_draw.cpp"
+	"deps/imgui/src/imgui_tables.cpp"
+	"deps/imgui/src/imgui_widgets.cpp"
+	"deps/imgui/src/imgui_impl_glfw.cpp"
+	"deps/imgui/src/imgui_impl_vulkan.cpp"
 	"deps/stb/src/stb_image.c"
 	"deps/stb/src/stb_image_write.c"
 	"deps/stb/src/stb_truetype.c"
@@ -29,7 +36,7 @@ add_library(${PROJECT_NAME}
 	"src/render.cpp"
 )
 
-target_include_directories(${PROJECT_NAME} PUBLIC "include" "deps/stb/include" "deps/tinygltf/include" ${Vulkan_INCLUDE_DIRS})
+target_include_directories(${PROJECT_NAME} PUBLIC "include" "deps/stb/include" "deps/tinygltf/include" "deps/imgui/include" ${Vulkan_INCLUDE_DIRS})
 target_link_libraries(${PROJECT_NAME} glfw ${Vulkan_LIBRARIES})
 
 set(WIL_SHADER_SRC_DIRECTORY "${PROJECT_SOURCE_DIR}/shaders")

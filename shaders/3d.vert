@@ -16,6 +16,7 @@ layout(set = 0, binding = 0) uniform GlobalData {
 
 layout(push_constant) uniform PushConstant {
     mat4 model;
+	bool has_texture;
 } push;
 
 void main()

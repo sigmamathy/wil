@@ -48,6 +48,9 @@ private:
 template<class T>
 constexpr size_t std140_alignment()
 {
+	if (std::is_same_v<T, bool>)
+		return 1;
+
 	if (std::is_same_v<T, float>
 			|| std::is_same_v<T, int>
 			|| std::is_same_v<T, unsigned>)

@@ -9,6 +9,22 @@
 
 namespace wil {
 
+enum ShapeType
+{
+	CUBE,
+	SPHERE,
+	CYLINDER,
+	PYRAMID,
+	CONE,
+	ARROW,
+};
+
+struct Shape
+{
+	ShapeType shape;
+	Fvec3 color;
+};
+
 struct ModelComponent
 {
 	std::string path;
